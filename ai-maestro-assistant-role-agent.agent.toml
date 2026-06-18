@@ -1,0 +1,50 @@
+# AI Maestro Assistant Role Agent - Agent Profile (R39)
+# Quad-match: plugin.json name == TOML [agent].name == agents/<name>-main-agent.md
+
+[agent]
+name = "ai-maestro-assistant-role-agent"
+source = "plugin:ai-maestro-assistant-role-agent"
+path = "agents/ai-maestro-assistant-role-agent-main-agent.md"
+compatible-titles = ["ASSISTANT"]
+compatible-clients = ["claude-code"]
+
+[requirements]
+project_type = "generic"
+tech_stack = ["generic"]
+
+# This role-plugin ships NO bundled skills of its own. Per the AI Maestro
+# plugin-abstraction principle (docs/PLUGIN-ABSTRACTION-PRINCIPLE.md), it
+# references the globally-installed AI Maestro skills BY NAME so it inherits
+# governance/messaging changes without edits. They are declared in
+# [dependencies].external_skills below.
+[skills]
+primary = []
+secondary = []
+specialized = []
+
+[agents]
+recommended = []
+
+[commands]
+recommended = []
+
+[rules]
+recommended = []
+
+[mcp]
+recommended = []
+
+[hooks]
+recommended = []
+
+[lsp]
+recommended = []
+
+[dependencies]
+external_skills = [
+    "planning",
+    "agent-messaging",
+    "agent-identity",
+    "team-governance",
+    "team-kanban",
+]
