@@ -1,1 +1,38 @@
 .DS_Store
+
+# Agent/skill/tool reports — may contain private data (absolute paths, hostnames)
+reports/
+reports_dev/
+
+# Dev-only working folders
+docs_dev/
+scripts_dev/
+tests_dev/
+
+# Janitor per-session state
+.janitor/
+
+# Claude Code per-session cache / local state
+.claude/
+
+# Editor temp and swap files
+*.swp
+*.swo
+*.swn
+*~
+.*.sw?
+*.bak
+.idea/
+.vscode/
+
+# Python build / venv / caches
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+*.egg-info/
+dist/
+build/
