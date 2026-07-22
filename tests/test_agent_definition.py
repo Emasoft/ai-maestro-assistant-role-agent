@@ -21,6 +21,17 @@ def test_agent_file_exists_and_is_utf8(agent_path: Path) -> None:
     agent_path.read_text(encoding="utf-8")
 
 
+def test_the_shipped_agent_filename_is_exactly_the_expected_one(repo_root: Path) -> None:
+    """agents/ holds exactly one agent, at the literal expected filename.
+
+    Spelled out rather than composed from PLUGIN_NAME on purpose: AI Maestro's
+    quad-match binds on this exact path, so a rename of BOTH the plugin
+    constant and the file would otherwise slip through every other test here.
+    """
+    agents = sorted(p.name for p in (repo_root / "agents").glob("*.md"))
+    assert agents == ["ai-maestro-assistant-role-agent-main-agent.md"]
+
+
 def test_agent_frontmatter_parses_as_yaml(agent_frontmatter: dict[str, Any]) -> None:
     """Frontmatter parses with a real YAML parser.
 
@@ -88,7 +99,7 @@ def test_agent_body_forbids_creating_agents_or_teams(agent_body: str) -> None:
     """The single most important prohibition survives: no agent/team creation."""
     lowered = agent_body.lower()
     assert "team" in lowered
-    assert re.search(r"(must not|cannot|can't|no authority).{0,80}(creat|team|agent)", lowered, re.DOTALL)
+    assert re.search(r"(must not|cannot|can't|no authority).{0,80}(create|team|agent)", lowered, re.DOTALL)
 
 
 def test_agent_body_has_no_absolute_home_paths(agent_text: str) -> None:
