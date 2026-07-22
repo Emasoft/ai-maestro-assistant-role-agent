@@ -2,7 +2,7 @@
 
 <!--BADGES-START-->
 [![CI](https://github.com/Emasoft/ai-maestro-assistant-role-agent/actions/workflows/ci.yml/badge.svg)](https://github.com/Emasoft/ai-maestro-assistant-role-agent/actions/workflows/ci.yml)
-[![Version](https://img.shields.io/badge/version-0.3.0-blue)](https://github.com/Emasoft/ai-maestro-assistant-role-agent)
+[![Version](https://img.shields.io/badge/version-0.3.1-blue)](https://github.com/Emasoft/ai-maestro-assistant-role-agent)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 <!--BADGES-END-->
 
