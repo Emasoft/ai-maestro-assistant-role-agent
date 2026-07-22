@@ -23,7 +23,13 @@ from pathlib import Path
 
 import pytest
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts"))
+# APPENDED, not inserted at 0: scripts/ holds generically-named modules
+# (publish.py), and putting it first would shadow any same-named stdlib or
+# site-packages module for every test in the session, not just this one.
+# Guarded so a re-import cannot grow sys.path on repeated collection.
+_SCRIPTS_DIR = str(Path(__file__).resolve().parent.parent / "scripts")
+if _SCRIPTS_DIR not in sys.path:
+    sys.path.append(_SCRIPTS_DIR)
 
 from cpv_network_resilience import (  # noqa: E402
     GH_MAX_ATTEMPTS,

@@ -140,7 +140,6 @@
     "wikimem",
     "xdist",
     "yamllint",
-    "zizmor",
-    "monkeypatch"
+    "zizmor"
   ]
 }

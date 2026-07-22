@@ -16,6 +16,12 @@ from typing import Any
 
 import pytest
 
+# Imported hard, never via importorskip: this parser IS the regression guard for
+# the v0.2.2 defect that made the agent unloadable. A skip-on-missing would have
+# let that CRITICAL bug ship green, and pyyaml is a declared dev dependency, so
+# its absence is a broken environment — which must fail, not silently pass.
+import yaml
+
 if sys.version_info >= (3, 11):
     import tomllib
 else:  # pragma: no cover - the project pins requires-python >= 3.12
@@ -73,11 +79,17 @@ def agent_text(agent_path: Path) -> str:
 
 
 @pytest.fixture(scope="session")
-def agent_frontmatter_raw(agent_text: str) -> str:
-    """The raw YAML frontmatter block of the main agent, fences stripped."""
+def _agent_frontmatter_match(agent_text: str) -> re.Match[str]:
+    """The single frontmatter match both the raw block and the body derive from."""
     match = _FRONTMATTER_RE.match(agent_text)
     assert match is not None, "agent file has no leading '---' YAML frontmatter block"
-    return match.group(1)
+    return match
+
+
+@pytest.fixture(scope="session")
+def agent_frontmatter_raw(_agent_frontmatter_match: re.Match[str]) -> str:
+    """The raw YAML frontmatter block of the main agent, fences stripped."""
+    return _agent_frontmatter_match.group(1)
 
 
 @pytest.fixture(scope="session")
@@ -89,15 +101,12 @@ def agent_frontmatter(agent_frontmatter_raw: str) -> dict[str, Any]:
     ': ' inside a multi-line plain scalar) makes the agent unloadable in
     production even though the file "looks fine" to the eye.
     """
-    yaml = pytest.importorskip("yaml", reason="pyyaml is a dev dependency")
     data = yaml.safe_load(agent_frontmatter_raw)
     assert isinstance(data, dict), "agent frontmatter must parse to a mapping"
     return data
 
 
 @pytest.fixture(scope="session")
-def agent_body(agent_text: str) -> str:
+def agent_body(agent_text: str, _agent_frontmatter_match: re.Match[str]) -> str:
     """The main agent's markdown body (everything after the frontmatter)."""
-    match = _FRONTMATTER_RE.match(agent_text)
-    assert match is not None
-    return agent_text[match.end():]
+    return agent_text[_agent_frontmatter_match.end():]

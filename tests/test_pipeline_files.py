@@ -163,7 +163,10 @@ def test_gitignore_covers_private_and_transient_paths(repo_root: Path) -> None:
     committing them is a data leak, not just clutter.
     """
     text = (repo_root / ".gitignore").read_text(encoding="utf-8")
-    for entry in ("reports/", ".janitor/", ".claude/", "*.swp", "__pycache__/", ".venv/", ".env"):
+    # reports_dev/ is listed explicitly, not left to the `*_dev/` catch-all: the
+    # agent-reports rule requires BOTH report dirs ignored by name, and a later
+    # edit that drops the glob would otherwise silently start tracking them.
+    for entry in ("reports/", "reports_dev/", ".janitor/", ".claude/", "*.swp", "__pycache__/", ".venv/", ".env"):
         assert entry in text, f".gitignore is missing '{entry}'"
 
 

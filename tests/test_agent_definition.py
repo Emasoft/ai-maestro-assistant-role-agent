@@ -84,22 +84,48 @@ def test_every_example_block_is_well_formed(agent_body: str) -> None:
         assert "<commentary>" in block, f"example {index} has no <commentary> rationale"
 
 
+# A prohibition is a NEGATION applied to a VERB applied to an OBJECT. Asserting
+# only that the words appear somewhere is worthless: a body rewritten to GRANT
+# the power keeps every one of those words. So each pattern below pins all three
+# parts in order, and `[^.]` keeps a match inside a single sentence (it spans the
+# newlines of a wrapped line but never runs past the full stop into the next
+# claim). Verified by deletion: removing the prohibition makes these fail.
+_NEGATION = r"(?:must not|cannot|can't|may not|no authority to|never)"
+# Spelled as whole words rather than a truncated stem plus `\w*`: cspell runs
+# over this source in CI and rejects a stem as an unknown word, turning Lint red.
+_CREATE = r"(?:create|creates|creating|creation)"
+
+_REQUIRED_PROHIBITIONS = {
+    "no agent creation": rf"{_NEGATION}[^.]{{0,80}}{_CREATE}[^.]{{0,80}}agent",
+    "no team creation": rf"{_NEGATION}[^.]{{0,80}}{_CREATE}[^.]{{0,80}}team",
+    "no sudo password": rf"{_NEGATION}[^.]{{0,80}}sudo",
+}
+
+
 def test_agent_body_states_the_forbidden_actions(agent_body: str) -> None:
-    """The persona still enumerates the R39 prohibitions.
+    """The persona still carries a FORBIDDEN section and cites R39 and TRDDs.
 
     These are the invariants that keep an ASSISTANT from acting like a
     MANAGER; losing them during an edit would silently widen its authority.
+    The prohibitions themselves are asserted as negations, not as keywords —
+    see test_agent_body_forbids_creating_agents_or_teams.
     """
     lowered = agent_body.lower()
-    for phrase in ("forbidden", "r39", "sudo", "trdd"):
-        assert phrase in lowered, f"agent body no longer mentions '{phrase}'"
+    assert re.search(r"^#+ +forbidden\b", lowered, re.MULTILINE), "no FORBIDDEN section heading"
+    assert "r39" in lowered, "agent body no longer cites the governing rule R39"
+    assert "trdd" in lowered, "agent body no longer mentions TRDDs (its approval scope)"
 
 
 def test_agent_body_forbids_creating_agents_or_teams(agent_body: str) -> None:
-    """The single most important prohibition survives: no agent/team creation."""
+    """The single most important prohibition survives: no agent/team creation.
+
+    Each check requires a negation, the verb and the object in ONE sentence,
+    so the test fails the moment the prohibition is softened or deleted —
+    unlike a keyword scan, which a body that GRANTS the power would still pass.
+    """
     lowered = agent_body.lower()
-    assert "team" in lowered
-    assert re.search(r"(must not|cannot|can't|no authority).{0,80}(create|team|agent)", lowered, re.DOTALL)
+    for label, pattern in _REQUIRED_PROHIBITIONS.items():
+        assert re.search(pattern, lowered), f"persona no longer states the '{label}' prohibition"
 
 
 def test_agent_body_has_no_absolute_home_paths(agent_text: str) -> None:
