@@ -7,10 +7,23 @@ a release day, which is exactly when it costs the most.
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 from typing import Any
 
 WORKFLOWS = ("ci.yml", "release.yml", "notify-marketplace.yml")
+
+# Every place the pipeline pins the CPV validator. The three MUST agree: CI,
+# the release gate and the local publish gate all fetch the validator from this
+# ref, so a partial bump makes local and CI enforce different rule sets.
+CPV_REF_SITES = (
+    ("scripts", "publish.py"),
+    (".github", "workflows", "ci.yml"),
+    (".github", "workflows", "release.yml"),
+)
+# Match only ref-legal characters, so a trailing ")" / quote / backslash from the
+# surrounding prose or shell continuation is never captured as part of the ref.
+CPV_REF_RE = re.compile(r"claude-plugins-validation@([A-Za-z0-9][A-Za-z0-9._/-]*)")
 
 
 def test_publish_script_present_and_executable(repo_root: Path) -> None:
@@ -31,6 +44,50 @@ def test_pre_push_hook_invokes_the_publish_gate(repo_root: Path) -> None:
     """The hook actually runs publish.py --gate rather than being a stub."""
     text = (repo_root / "git-hooks" / "pre-push").read_text(encoding="utf-8")
     assert "publish.py" in text and "--gate" in text
+
+
+def test_pre_push_hook_is_posix_sh(repo_root: Path) -> None:
+    """The hook is POSIX sh, not bash.
+
+    The canonical hook deliberately targets /usr/bin/env sh so it runs on a
+    machine with no bash (a stock Debian/Alpine contributor box). A bash-only
+    shebang makes the gate silently impossible to run exactly where it matters.
+    """
+    text = (repo_root / "git-hooks" / "pre-push").read_text(encoding="utf-8")
+    assert text.startswith("#!/usr/bin/env sh"), "pre-push must be POSIX sh"
+
+
+def test_pre_push_hook_secret_scans_feature_branches(repo_root: Path) -> None:
+    """A feature-branch push is secret-scanned, and FAILS CLOSED without the scanner.
+
+    The release gate only covers the default branch and tags, so without this
+    a contributor could push secrets on a feature branch untouched by any gate.
+    'trufflehog missing' must therefore BLOCK, never silently allow — a push
+    that skipped the scan but still looks like a pass is the worst outcome.
+    """
+    text = (repo_root / "git-hooks" / "pre-push").read_text(encoding="utf-8")
+    assert "trufflehog" in text, "pre-push does not secret-scan feature branches"
+    assert "BLOCKED" in text, "pre-push does not fail closed when the scanner is absent"
+
+
+def test_cpv_ref_is_pinned_and_consistent(repo_root: Path) -> None:
+    """publish.py, ci.yml and release.yml pin ONE identical CPV version tag.
+
+    Guards the drift class this pipeline was migrated to fix: a bump that
+    updates the workflow but not publish.py leaves CI and the local gate
+    enforcing different rules, so a push passes locally and fails in CI. A
+    floating ref (@main) is equally rejected — it makes any upstream release
+    able to break this plugin's gate with no change here.
+    """
+    refs: set[str] = set()
+    for parts in CPV_REF_SITES:
+        text = repo_root.joinpath(*parts).read_text(encoding="utf-8")
+        found = set(CPV_REF_RE.findall(text))
+        assert found, f"{'/'.join(parts)} pins no CPV validator ref"
+        refs |= found
+    assert len(refs) == 1, f"CPV ref disagrees across the pipeline: {sorted(refs)}"
+    ref = refs.pop()
+    assert re.fullmatch(r"v\d+\.\d+\.\d+", ref), f"CPV ref is not a pinned version tag: {ref}"
 
 
 def test_all_canonical_workflows_present(repo_root: Path) -> None:
