@@ -1,0 +1,56 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["scripts"]
+
+[project]
+name = "ai-maestro-assistant-role-agent"
+version = "0.2.2"
+description = "Role-plugin for ASSISTANT-titled agents in the AI Maestro ecosystem (R39). Each human user (except the MAESTRO) gets exactly one ASSISTANT: it can plan like a MANAGER and program like an AUTONOMOUS agent, but it MUST NOT create agents or teams and has NO governing powers. It serves exactly one user (label 'Assistant of <user>'), obeys ONLY that user (not even the MAESTRO), approves only its OWN TRDDs, has no team, and is invisible to every agent except the MANAGER — which may assign it a refusable task only if the user enabled MANAGER-collaboration (R39.8/R39.9). On a shared GitHub project it acts as a peer with equal authority; when the MANAGER assigns a collaborator there (and the user permits), a scoped, user-revocable channel to that collaborator opens (R39.10). It inherits its user's kanban tasks and granted permissions. Requires AI Maestro for messaging/identity skills."
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = []
+
+[project.optional-dependencies]
+dev = [
+    "mypy>=1.19.1",
+    "pyyaml>=6.0",
+    "pytest>=8.0.0",
+    "pytest-cov>=4.1.0",
+    # REQUIRED by ci.yml's sharded test matrix: it runs
+    # `pytest --splits N --group K`, and those flags exist only when
+    # pytest-split is installed (without it every shard dies with
+    # "pytest: error: unrecognized arguments: --splits --group").
+    # Emitted from generate_plugin_repo.PYTEST_SPLIT_REQUIREMENT, the same
+    # constant that drives the matrix — do not drop one without the other.
+    "pytest-split>=0.9",
+    "ruff>=0.14.14",
+]
+
+[tool.ruff]
+line-length = 120
+# Test fixtures are deliberately-malformed sample data that exercise this
+# plugin's validators/tests — ruff must never lint or format them locally
+# (e.g. `ruff check scripts/ tests/`) or it would "correct" the defects the
+# tests depend on. Mirrors the Mega-Linter FILTER_REGEX_EXCLUDE used in CI.
+extend-exclude = ["**/fixtures", "**/testdata", "**/__fixtures__"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I"]
+ignore = ["E501"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*.py" = ["E402"]
+
+[tool.mypy]
+python_version = "3.12"
+warn_return_any = true
+warn_unused_configs = true
+
+[tool.pyright]
+pythonVersion = "3.12"
+extraPaths = ["scripts", "tests"]
+reportMissingImports = "warning"
+typeCheckingMode = "basic"

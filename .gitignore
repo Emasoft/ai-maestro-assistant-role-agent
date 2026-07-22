@@ -36,3 +36,11 @@ venv/
 *.egg-info/
 dist/
 build/
+
+# Added by CPV standardize
+.tldr/
+llm_externalizer_output/
+*_dev/
+.env
+.coverage
+node_modules/
