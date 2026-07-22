@@ -85,7 +85,6 @@
     "megalinter",
     "memgrep",
     "mkdtemp",
-    "monkeypatch",
     "monorepo",
     "mypy",
     "nodejs",

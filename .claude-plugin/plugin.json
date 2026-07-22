@@ -12,5 +12,12 @@
     {
       "name": "ai-maestro-plugin"
     }
-  ]
+  ],
+  "cpv": {
+    "pipeline": {
+      "intentional_divergence": [
+        ".github/workflows/notify-marketplace.yml"
+      ]
+    }
+  }
 }

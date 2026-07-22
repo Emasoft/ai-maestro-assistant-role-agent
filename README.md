@@ -106,20 +106,23 @@ uv run mypy scripts/
 
 ## Project Structure
 
-```
+```text
 ai-maestro-assistant-role-agent/
 ├── .claude-plugin/
-│   └── plugin.json          # Plugin manifest
+│   └── plugin.json                              # Plugin manifest
 ├── .github/
-│   └── workflows/           # CI/CD workflows
-├── git-hooks/               # Git hooks (pre-push)
-├── scripts/                 # Plugin source code
-├── tests/                   # Test suite
-├── pyproject.toml           # Project configuration
-├── cliff.toml               # Changelog generation config
-├── README.md                # This file
-├── LICENSE                  # License file
-└── .gitignore               # Git ignore rules
+│   └── workflows/                               # CI/CD workflows
+├── agents/
+│   └── ai-maestro-assistant-role-agent-main-agent.md   # The ASSISTANT persona
+├── ai-maestro-assistant-role-agent.agent.toml   # AI Maestro agent profile
+├── git-hooks/                                   # Git hooks (pre-push)
+├── scripts/                                     # Release pipeline scripts
+├── tests/                                       # Test suite
+├── pyproject.toml                               # Project configuration
+├── cliff.toml                                   # Changelog generation config
+├── README.md                                    # This file
+├── LICENSE                                      # License file
+└── .gitignore                                   # Git ignore rules
 ```
 
 ## Marketplace
