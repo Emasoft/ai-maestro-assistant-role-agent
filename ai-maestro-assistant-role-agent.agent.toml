@@ -40,11 +40,14 @@ recommended = []
 [lsp]
 recommended = []
 
+# team-governance is deliberately EXCLUDED (R39.8): it is the MANAGER's team-CRUD
+# / approvals / transfers machinery, and the ASSISTANT has no team, no governing
+# powers, and approves only its OWN TRDDs. The comm-graph rules it needs come from
+# agent-messaging.
 [dependencies]
 external_skills = [
     "planning",
     "agent-messaging",
     "agent-identity",
-    "team-governance",
     "team-kanban",
 ]
