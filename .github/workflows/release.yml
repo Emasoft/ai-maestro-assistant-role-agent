@@ -54,7 +54,7 @@ jobs:
         # handler below says so instead of mislabelling it as findings, and
         # fails the release rather than publishing an unvalidated tag.
         # Issue #11: removed local scripts/validate_plugin.py invocation.
-        # Root-cause #2: CPV is PINNED to @v2.162.0 (same ref the
+        # Root-cause #2: CPV is PINNED to @v3.1.0 (same ref the
         # CI validate job and publish.py use) so the cold uvx-from-git build is
         # cached per tag and a stricter future CPV release cannot break the
         # release gate with no plugin change. Root-cause #5: this re-runs the
@@ -82,7 +82,7 @@ jobs:
           PLUGIN_REPO_LINT_PHASE_TIMEOUT: "600"
         run: |
           set +e
-          uvx --from git+https://github.com/Emasoft/claude-plugins-validation@v2.162.0 \
+          uvx --from git+https://github.com/Emasoft/claude-plugins-validation@v3.1.0 \
               --with pyyaml \
               cpv-remote-validate plugin . --strict \
               > "validation-report.txt" 2>&1

@@ -615,7 +615,7 @@ def install_branch_rules(root: Path) -> int:
             [
                 "uvx",
                 "--from",
-                "git+https://github.com/Emasoft/claude-plugins-validation@v2.162.0",
+                "git+https://github.com/Emasoft/claude-plugins-validation@v3.1.0",
                 "--with",
                 "pyyaml",
                 "cpv-setup-branch-rules",
@@ -883,7 +883,7 @@ def run_gate(root: Path) -> int:
         return 1
     ve = subprocess.run(
         ["uvx", "--from",
-         "git+https://github.com/Emasoft/claude-plugins-validation@v2.162.0",
+         "git+https://github.com/Emasoft/claude-plugins-validation@v3.1.0",
          "--with", "pyyaml",
          "cpv-remote-validate", "plugin", ".", "--strict"],
         cwd=str(root), timeout=600).returncode
@@ -1115,7 +1115,7 @@ def stage_validate(root: Path) -> None:
 
     Cornerstone rule: a plugin cannot be pushed unless validation passes
     with 0 issues (WARNING allowed). The validator is ALWAYS fetched from
-    GitHub (git+https://github.com/Emasoft/claude-plugins-validation@v2.162.0) via
+    GitHub (git+https://github.com/Emasoft/claude-plugins-validation@v3.1.0) via
     uvx so a local tampered copy cannot weaken the rules. No exceptions.
 
     Order: runs AFTER lint + tests so behavioral regressions fail fast
@@ -1130,7 +1130,7 @@ def stage_validate(root: Path) -> None:
     # on CRITICAL(1), MAJOR(2), MINOR(3), NIT(4); WARNING(5+) passes.
     run([
         "uvx", "--from",
-        "git+https://github.com/Emasoft/claude-plugins-validation@v2.162.0",
+        "git+https://github.com/Emasoft/claude-plugins-validation@v3.1.0",
         "--with", "pyyaml",
         "cpv-remote-validate", "plugin", ".", "--strict",
     ], cwd=root)
@@ -1165,7 +1165,7 @@ def stage_ci_preflight(root: Path) -> None:
         sys.exit(1)
     rc = subprocess.run([
         "uvx", "--from",
-        "git+https://github.com/Emasoft/claude-plugins-validation@v2.162.0",
+        "git+https://github.com/Emasoft/claude-plugins-validation@v3.1.0",
         "--with", "pyyaml",
         "cpv-remote-validate", "ci-preflight", ".",
     ], cwd=str(root)).returncode
@@ -1353,7 +1353,7 @@ def stage_marketplace_registration(root: Path) -> None:
     if layout == "none":
         cprint(f"  {YELLOW}WARNING: no marketplace registration found for this plugin.{NC}")
         cprint(f"  {YELLOW}If you intend to publish to a marketplace, run the{NC}")
-        cprint(f"  {YELLOW}setup-marketplace-auto-notification skill to wire up auto-updates.{NC}")
+        cprint(f"  {YELLOW}cpv-setup-marketplace-auto-notification skill to wire up auto-updates.{NC}")
         cprint(f"  {YELLOW}Allowing release to proceed (standalone/experimental mode).{NC}")
         return
 
@@ -1390,7 +1390,7 @@ def stage_marketplace_registration(root: Path) -> None:
         cprint(f"  {GREEN}Plugin registered in remote marketplace.json{NC}")
         if not _remote_has_receiver_workflow(mkt_owner, mkt_repo):
             cprint(f"  {RED}BLOCKED: remote marketplace {mkt_owner}/{mkt_repo} has no workflow with repository_dispatch trigger.{NC}")
-            cprint(f"  {RED}  See setup-marketplace-auto-notification skill.{NC}")
+            cprint(f"  {RED}  See cpv-setup-marketplace-auto-notification skill.{NC}")
             sys.exit(1)
         cprint(f"  {GREEN}Remote marketplace has receiver workflow{NC}")
         cprint(f"  {GREEN}Layout A marketplace registration verified.{NC}")
