@@ -132,3 +132,40 @@ def test_agent_body_has_no_absolute_home_paths(agent_text: str) -> None:
     """No developer-machine absolute path leaks into the shipped persona."""
     for leak in ("/Users/", "/home/", "C:\\Users\\"):
         assert leak not in agent_text, f"agent file leaks an absolute path prefix '{leak}'"
+
+
+# The persona is loaded IN FULL on every dispatch of this agent, so its size is a
+# standing per-invocation cost — CPV emits a "body very long" advisory that no
+# gate enforces. This window guards BOTH directions: the ceiling catches
+# unbounded growth (each edit that piles on more prose is paid forever); the
+# floor catches a mass deletion that a keyword check would miss (a body gutted to
+# a stub still contains "r39", "sudo", etc.). The window is deliberately wide —
+# it fails only on a change large enough to warrant a human look, not on ordinary
+# wording edits. Numbers are a budget, not the current length; widen consciously.
+_WORD_FLOOR = 3000
+_WORD_CEILING = 5000
+
+
+def test_agent_body_stays_within_its_word_budget(agent_body: str) -> None:
+    """The persona's word count sits inside the agreed [floor, ceiling] window."""
+    words = len(agent_body.split())
+    assert _WORD_FLOOR <= words <= _WORD_CEILING, (
+        f"persona is {words} words, outside the [{_WORD_FLOOR}, {_WORD_CEILING}] budget; "
+        "if this growth/shrink is intended, move the bound in one deliberate edit"
+    )
+
+
+def test_forbidden_list_is_intact(agent_body: str) -> None:
+    """The numbered FORBIDDEN prohibitions are all still present.
+
+    The FORBIDDEN section is the authority ceiling that keeps an ASSISTANT from
+    acting like a MANAGER. The per-rule negation tests above prove the THREE
+    load-bearing ones survive; this one guards the LIST as a whole against a
+    silent mass-deletion that trims it down to a couple of items. Counts the
+    `N. **NEVER …` numbered entries, which is the persona's own list format.
+    """
+    prohibitions = re.findall(r"^\d+\.\s+\*\*never\b", agent_body.lower(), re.MULTILINE)
+    assert len(prohibitions) >= 12, (
+        f"only {len(prohibitions)} numbered FORBIDDEN prohibitions found; "
+        "the authority-boundary list looks truncated"
+    )

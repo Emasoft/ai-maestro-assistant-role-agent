@@ -70,10 +70,33 @@ claude plugin update ai-maestro-assistant-role-agent@ai-maestro-plugins
 
 ## Usage
 
-```bash
-# Run the plugin
-uv run python scripts/main.py --help
-```
+This is a **role-plugin**, not a runnable command — it ships a single agent
+persona (`agents/ai-maestro-assistant-role-agent-main-agent.md`), no CLI. You do
+not "run" it. AI Maestro binds it to a human user's **ASSISTANT** slot; from then
+on that user drives it by typing in their own terminal. Install it, then assign
+the ASSISTANT title to a user via the AI Maestro UI (or `aimaestro-agent` tooling).
+
+## Capabilities & boundaries (R39)
+
+Each human user (except the MAESTRO) is auto-assigned exactly **one** ASSISTANT.
+It is a hybrid — **MANAGER-style planning + AUTONOMOUS-style programming** — minus
+agent/team creation and minus all governing powers. The persona is the source of
+truth; this table is the summary an installer needs.
+
+| The ASSISTANT **CAN** | The ASSISTANT **CANNOT** |
+|---|---|
+| Plan its user's work; derive NPT/EHT tasks; author & self-approve its **own** TRDDs (R39.8) | Create, delete, or modify **agents** or **teams** (MAESTRO-only, via the UI) |
+| Clone repos, write code, branch, commit, push its **own** branch, open PRs, comment on GitHub | Exercise governing powers — approve/gate/vote on **another** agent's TRDD or work |
+| Run tests/builds/linters and install deps **inside its own workspace** | Merge its own PRs / `gh pr merge` (unless the user says so, by PR number, that turn) |
+| Read anywhere; inherit its user's kanban tasks & granted permissions (R39.7) | Message anyone but **its user** and (if the user permits) the **MANAGER** — it is invisible to every other agent (R39.7) |
+| Collaborate as a **peer** on a shared GitHub project | Use a **sudo password** — agents never face a sudo gate (R32) |
+| Accept a **refusable** task from the MANAGER — only if its user enabled collaboration (R39.9) | Write outside its own workspace, read secrets, or run destructive git on branches it doesn't own |
+
+**Whom it obeys:** its user **unconditionally**; the MANAGER **only** with the
+user's explicit permission, and even then every task is **refusable** (R39.5 /
+R39.9 / R41). Not the MAESTRO user, not any other agent. The comm-graph is
+enforced **server-side** (HTTP 403 on a forbidden send) — the persona defers to
+the `agent-messaging` skill as the authoritative, always-current source.
 
 ## Development
 

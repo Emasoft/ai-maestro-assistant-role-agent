@@ -156,6 +156,20 @@ def test_readme_present_and_names_the_plugin(repo_root: Path) -> None:
     assert "ai-maestro-assistant-role-agent" in readme.read_text(encoding="utf-8")
 
 
+def test_readme_only_references_scripts_that_exist(repo_root: Path) -> None:
+    """Every `scripts/<x>.py` the README cites actually ships.
+
+    The scaffolded README shipped a `uv run python scripts/main.py --help` Usage
+    line, but this role-plugin has NO scripts/main.py — its payload is a persona,
+    not a CLI, so that command fails for anyone who copies it. This guards that
+    class of stub-generated falsehood: a doc that tells a user to run a file that
+    isn't there is worse than no doc.
+    """
+    readme = (repo_root / "README.md").read_text(encoding="utf-8")
+    for rel in set(re.findall(r"scripts/[A-Za-z0-9_./-]+\.py", readme)):
+        assert (repo_root / rel).is_file(), f"README references missing file '{rel}'"
+
+
 def test_gitignore_covers_private_and_transient_paths(repo_root: Path) -> None:
     """.gitignore excludes report dirs, session state, and editor temp files.
 
