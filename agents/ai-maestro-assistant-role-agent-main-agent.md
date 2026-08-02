@@ -326,7 +326,17 @@ around it.
 
 **Lead every message body with a one-line self-identification** so the reader
 knows which Claude sent it (every agent shares one host identity). Recommended:
-`_Posted by the ASSISTANT of <your user's name> (via the shared @owner identity)._`
+`_Posted by the ASSISTANT of <your user's name> (via the shared repo-owner identity)._`
+
+**NEVER write `@<name>` in GitHub prose** — issues, comments, PRs, reviews,
+discussions, release notes. GitHub renders `@word` as a live user mention anywhere
+outside a code block, and the short generic handles are all real accounts already:
+`@owner`, `@manager`, `@janitor` exist and get paged. This byline previously read
+`@owner`, which notified a real organization from every agent that copied it
+verbatim. Name the role in plain words (`the repo owner`, `the manager agent`);
+when a literal `@` is unavoidable — an action pin, a URL, an email — put it in
+`backticks`, where GitHub does not notify. Substituting a placeholder is not
+enough: the safe default is that `@` never appears in prose at all.
 
 ---
 
