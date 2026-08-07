@@ -5,10 +5,11 @@ column: complete
 created: 2026-08-07T12:01:26+0200
 updated: 2026-08-07T12:01:26+0200
 current-owner: ai-maestro-assistant-role-agent
+assignee: ai-maestro-assistant-role-agent
 task-type: bugfix
 scope: project
 project-id: ai-maestro-assistant-role-agent
-approval-tier: 3
+min-approval-requirement: user
 severity: high
 blocked-by: []
 external-refs: [ai-maestro#109, ai-maestro#127, ai-maestro-assistant-role-agent#1]

@@ -4,12 +4,13 @@ title: Which R39 binds this plugin, and R39.2 asserts a publication state that i
 column: blocked
 pre-block-column: todo
 created: 2026-08-07T12:01:26+0200
-updated: 2026-08-07T18:42:00+0200
+updated: 2026-08-07T21:34:00+0200
 current-owner: ai-maestro-assistant-role-agent
+assignee: ai-maestro-assistant-role-agent
 task-type: docs
 scope: project
 project-id: ai-maestro-assistant-role-agent
-approval-tier: 3
+min-approval-requirement: user
 blocked-by: [ai-maestro#127]
 external-refs: [ai-maestro#67, ai-maestro#86, ai-maestro#118, ai-maestro#120, ai-maestro#127]
 relevant-rules: []
@@ -51,10 +52,16 @@ release-via: none
   | `design/specs/governance-spec.md:1571` (the SPEC) | *"**PUBLISHED** — public since 2026-07-22, listed in the marketplace manifest … remains absent from `PREDEFINED_ROLE_PLUGIN_NAMES`, which is now an **OPEN QUESTION** rather than a settled consequence of being local"* |
   | `docs/GOVERNANCE-RULES.md` (the CATALOG) | *"a **LOCAL/D4 source** … intentionally **NOT a published GitHub repo**"* |
 
-  So this was never a spec defect — it is a **PROPAGATION GAP**. The correction landed in the
-  SPEC on 2026-07-22 under the spec-first authority inversion; the CATALOG step never ran, and
-  the mirror still carries the false claim **16 days later**. The catalog is what I read, and
-  what a compliance check would read.
+  So this was never a spec defect — it was a **PROPAGATION GAP**. The correction landed in the
+  SPEC on 2026-07-22 under the spec-first authority inversion; the CATALOG step lagged it.
+
+- **THE GAP IS NOW CLOSED — measured 2026-08-07T21:30, superseding the row above.** The CATALOG
+  on `governance-rules` now reads *"**PUBLISHED** — `Emasoft/ai-maestro-assistant-role-agent`,
+  public since 2026-07-22 and listed in the `ai-maestro-plugins` marketplace manifest"*, with the
+  `PREDEFINED_ROLE_PLUGIN_NAMES` omission restated as an **open question** rather than a
+  consequence of being local. Landed by commit `95052d6e` in `ai-maestro@governance-rules`
+  (*"docs(governance): R39.2 + RP-ASSISTANT-01 publication fact re-aligned"*). **Ask 2 is fully
+  resolved in both documents; do not re-report the mirror as stale.**
 - **The `PREDEFINED_ROLE_PLUGIN_NAMES` half is SETTLED: the ASSISTANT stays OUT, and the tuple
   must NOT be "fixed" to 9.** Ruled on #86 F2 by the MANAGER as the most-affected consumer
   (zero references to the tuple; title→plugin resolution uses separate maps). The *omission* was
@@ -103,5 +110,6 @@ Nothing has been changed pending the ruling.
 
 - [ ] Ruling recorded: which layer (DEP overlay / `GOVERNANCE-RULES.md` / other) is operative for R39.
 - [ ] If the overlay is operative, a decision on its total absence of ASSISTANT content.
-- [ ] R39.2 either amended to match reality, or a de-publication decision taken by the USER.
+- [x] R39.2 either amended to match reality, or a de-publication decision taken by the USER.
+      **Amended** — `95052d6e` in `ai-maestro@governance-rules`; catalog and spec now agree.
 - [ ] Persona citations updated to name the operative layer.

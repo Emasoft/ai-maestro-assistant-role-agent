@@ -6,10 +6,11 @@ pre-block-column: todo
 created: 2026-08-07T12:01:26+0200
 updated: 2026-08-07T12:01:26+0200
 current-owner: ai-maestro-assistant-role-agent
+assignee: ai-maestro-assistant-role-agent
 task-type: docs
 scope: project
 project-id: ai-maestro-assistant-role-agent
-approval-tier: 2
+min-approval-requirement: manager
 blocked-by: [ai-maestro#127]
 external-refs: [ai-maestro#107, ai-maestro#127, ai-maestro-assistant-role-agent#1]
 relevant-rules: []
