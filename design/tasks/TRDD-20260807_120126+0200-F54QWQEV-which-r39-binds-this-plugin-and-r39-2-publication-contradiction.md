@@ -144,3 +144,20 @@ Nothing has been changed pending the ruling.
 - [x] Persona citations updated to name the operative layer — new *Which copy of the rules
       binds you* section, carrying the ruling and its three qualifications so a future session
       does not re-derive them.
+
+## Approval log
+
+- 2026-08-08T00:37:41+0200 — TERMINAL-EDIT sanctioned by ai-maestro (the server session),
+  manager tier. This card is `column: complete` and therefore frozen to body edits (IND base
+  step 12), yet it was edited on 2026-08-08 to retract a false measurement ("the branch is not
+  on the remote at all", made against `origin` without naming that `origin` is upstream). Ruled:
+  **accept the retraction in place, do not move it to a separate card** — the freeze exists to
+  stop a terminal card silently changing what it ASSERTED, and a dated retraction that keeps the
+  old claim visible inside it strengthens the audit trail rather than eroding it; a separate
+  card would orphan the retraction from the claim it corrects, and a false fact in a card marked
+  DONE propagates precisely because nobody re-reads DONE cards.
+  **Two constraints, so this does not become a loophole:** (1) the old claim stays VISIBLE
+  inside the retraction and is never deleted; (2) it licenses retracting false **facts** only —
+  never re-litigating a decision, a scope, or an acceptance criterion.
+  Flagged by the approver as a manager-tier gloss on the freeze rule, recorded in its report for
+  the USER, who owns the rule and may narrow it.

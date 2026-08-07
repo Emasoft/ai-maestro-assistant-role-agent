@@ -107,3 +107,20 @@ the instance.
       available remedy is deleting authored guidance, and would put a standing incentive on
       trimming the canonical copy. Guarded by its own coverage test so the exclusion cannot
       silently stop working.
+
+## Approval log
+
+- 2026-08-08T00:37:41+0200 — TERMINAL-EDIT sanctioned by ai-maestro (the server session),
+  manager tier. This card is `column: complete` and therefore frozen to body edits (IND base
+  step 12), yet it was edited on 2026-08-08 to retract a false measurement ("the branch is
+  LOCAL-ONLY", made against `origin` without naming that `origin` is upstream). Ruled: **accept
+  the retraction in place, do not move it to a separate card** — the freeze exists to stop a
+  terminal card silently changing what it ASSERTED, and a dated retraction that keeps the old
+  claim visible inside it strengthens the audit trail rather than eroding it; it is the same
+  supersede-never-overwrite form the memory system mandates, and a separate card would orphan
+  the retraction from the claim it corrects.
+  **Two constraints, so this does not become a loophole:** (1) the old claim stays VISIBLE
+  inside the retraction and is never deleted; (2) it licenses retracting false **facts** only —
+  never re-litigating a decision, a scope, or an acceptance criterion.
+  Flagged by the approver as a manager-tier gloss on the freeze rule, recorded in its report for
+  the USER, who owns the rule and may narrow it.
