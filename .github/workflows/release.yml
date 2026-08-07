@@ -173,6 +173,20 @@ jobs:
           else
             echo "$GITLOG" > changelog.txt
           fi
+          # G1.1 (TRDD-5KZQUOBS): every GitHub-writing surface leads with who
+          # authored it, and a release note is one. Prepended AFTER the
+          # fallback chain resolves, not inside it: the chain has four exits,
+          # so an in-chain fix needs four edits — three of which a reviewer
+          # must notice are missing — and a future fifth fallback would
+          # silently opt out. Here, every present and future body is covered.
+          # NO '@' in the line: it is a template, it gets copied out of
+          # wherever it sits, and any @word in prose linkifies and pages a
+          # live account (TRDD-3972YVFH is that exact harm, still live in
+          # v0.3.2). Plain words identify the author just as well.
+          {
+            printf '_Released by the ASSISTANT role-plugin (via the shared repo-owner identity)._\n\n'
+            cat changelog.txt
+          } > changelog.body && mv changelog.body changelog.txt
           echo "changelog_file=changelog.txt" >> "$GITHUB_OUTPUT"
 
       - name: Compute per-asset SHA256SUMS

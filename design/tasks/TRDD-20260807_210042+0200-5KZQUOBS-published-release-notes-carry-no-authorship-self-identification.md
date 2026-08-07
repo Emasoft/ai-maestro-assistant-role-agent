@@ -1,9 +1,13 @@
 ---
 trdd-id: 5KZQUOBS
 title: Published release notes carry no authorship self-identification line
-column: proposal
+column: complete
 created: 2026-08-07T21:00:42+0200
-updated: 2026-08-07T21:00:42+0200
+updated: 2026-08-08T00:06:32+0200
+implementation-commits: []
+approved: true
+approval-judge: ai-maestro (the server session)
+approval-datetime: 2026-08-08T00:03:49+0200
 current-owner: ai-maestro-assistant-role-agent
 assignee: ai-maestro-assistant-role-agent
 task-type: infra
@@ -21,6 +25,19 @@ release-via: publish
 ---
 
 # Published release notes carry no authorship self-identification line
+
+## ⏵ STATE — READ THIS FIRST ON RESUME (authoritative; supersedes the body) — 2026-08-08
+
+- **`column: complete`. The code work is DONE and every acceptance box is ticked.** The step is
+  in `release.yml`, the guard is extended to workflow files and falsified against a real
+  injection, and both body paths are dry-run.
+- **It has NOT shipped, and that is correct.** `release-via: publish`, so the terminal is
+  `published` — but `complete → publish` is NON-EXEMPT and is gated on the USER's F5 ruling
+  (`TRDD-3972YVFH`). Nothing here cuts a release; the fix rides whichever release the USER
+  authorizes.
+- **NEXT ACTION: none by me.** On the USER's go, this lands with v0.3.3 alongside `TRDD-3972YVFH`
+  and F6. Verify afterwards that the published release body actually carries the byline — the
+  pipeline is only proven by a real run.
 
 ## The gap
 
@@ -88,16 +105,34 @@ inside it would need four edits, three of which a reviewer would have to notice 
 
 ## Acceptance criteria
 
-- [ ] MANAGER rules on the change.
-- [ ] If approved: the step lands in `.github/workflows/release.yml` after the fallback chain.
-- [ ] The line contains no `@` — asserted by the existing bare-mention guard, extended to cover
-      workflow files, since today that guard scans tracked **markdown** only and would not have
-      caught this line at all.
-- [ ] A dry run confirms the body carries the line ahead of the changelog section, for a tag
-      whose section exists **and** for one whose section does not (the fallback path).
+- [x] MANAGER rules on the change. **APPROVED** 2026-08-08 — see the Approval log.
+- [x] The step lands in `.github/workflows/release.yml` after the fallback chain.
+- [x] The line contains no `@`, asserted by the guard **extended to workflow files**. The
+      extension strips whole-line YAML comments first — mandatory, because three tracked
+      workflow comments legitimately carry a word-boundary `@` (`PINNED to @v3.1.0` ×2 and this
+      guard's own rationale), and a guard that reddens on correct writing gets deleted. Trailing
+      `# v6.0.3` comments are left in place: their `@` is glued to a preceding character and the
+      pattern already exempts that, whereas stripping to end-of-line from any `#` would cut
+      through `#` inside quoted shell strings and hide real emitted prose.
+- [x] The extension is **falsified, not merely green**: injecting `@owner` into the real
+      `release.yml` byline made the corpus test FAIL with
+      `.github/workflows/release.yml: @owner`, then the file was restored and re-verified. A
+      clean scan whose stripper silently ate every line would otherwise be indistinguishable
+      from a correct one.
+- [x] Dry run over **both** body paths: section-found (`## [0.3.3] — …`) and fallback (git-log
+      lines). Both emit the byline, then a blank line, then the changelog body; `changelog.body`
+      is consumed by the `mv` and leaves no stray file.
+- [x] Verified NOT done: no release cut, no tag, no push. `CHANGELOG.md` and `cliff.toml`
+      untouched.
 
 ## Approval log
 
 - 2026-08-07T21:00:42+0200 — FILED as a proposal by the ASSISTANT
   (min-approval-requirement: manager). Routed to the MANAGER. Floor is manager on two
   independent §D3 signals: `.github/` and the release pipeline.
+- 2026-08-08T00:03:49+0200 — APPROVED by ai-maestro (the server session),
+  min-approval-requirement: manager, under the USER's governance-readiness delegation.
+  Two conditions attached, both already this card's stated intent: (1) the prepended line
+  follows the G1.1 no-`@` discipline — plain words, no handle anywhere, including inside the
+  workflow YAML; (2) the change lands in the pipeline and cuts NO release, which stays the
+  USER's F5 ruling to exercise. Promoted `proposal → planned` and moved to `design/tasks/`.
