@@ -44,7 +44,7 @@ TRANSIENT_STDERR = [
     "fatal: unable to access 'https://github.com/x.git/': Failed to connect to github.com port 443",
     "error: RPC failed; HTTP 502 curl 22 The requested URL returned error: 502",
     "fatal: the remote end hung up unexpectedly",
-    "Get \"https://api.github.com/repos\": context deadline exceeded",
+    'Get "https://api.github.com/repos": context deadline exceeded',
     "dial tcp 140.82.121.6:443: i/o timeout",
     "gh: Service Unavailable (HTTP 503)",
     "API rate limit exceeded for user",

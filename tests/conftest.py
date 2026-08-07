@@ -109,4 +109,4 @@ def agent_frontmatter(agent_frontmatter_raw: str) -> dict[str, Any]:
 @pytest.fixture(scope="session")
 def agent_body(agent_text: str, _agent_frontmatter_match: re.Match[str]) -> str:
     """The main agent's markdown body (everything after the frontmatter)."""
-    return agent_text[_agent_frontmatter_match.end():]
+    return agent_text[_agent_frontmatter_match.end() :]
