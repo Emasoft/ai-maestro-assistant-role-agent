@@ -166,6 +166,34 @@ def test_forbidden_list_is_intact(agent_body: str) -> None:
     """
     prohibitions = re.findall(r"^\d+\.\s+\*\*never\b", agent_body.lower(), re.MULTILINE)
     assert len(prohibitions) >= 12, (
-        f"only {len(prohibitions)} numbered FORBIDDEN prohibitions found; "
-        "the authority-boundary list looks truncated"
+        f"only {len(prohibitions)} numbered FORBIDDEN prohibitions found; the authority-boundary list looks truncated"
+    )
+
+
+def test_agent_body_covers_the_unpoliced_cross_session_channel(agent_body: str) -> None:
+    """The persona names the client's direct session-to-session channel.
+
+    AMP is validated server-side, so the persona could once say "a forbidden
+    send returns HTTP 403" and be complete. Claude Code 2.1.224 shipped a
+    SECOND transport — SendMessage between live sessions, with ListAgents to
+    enumerate them — that never reaches the AI Maestro server. No 403 is
+    possible on it, so R39.5/R39.7/R39.9 are unenforced there and the limit is
+    the persona's alone to hold. A body that documents only the policed
+    transport reads as though every send is checked, which is the more
+    dangerous of the two errors.
+
+    Naming the tools is asserted separately from the not-policed claim on
+    purpose: a body that merely mentioned them in passing would satisfy a
+    keyword scan while still implying the server has it covered.
+    """
+    lowered = agent_body.lower()
+    for tool in ("sendmessage", "listagents"):
+        assert tool in lowered, (
+            f"persona never names `{tool}` — the unpoliced cross-session transport "
+            "is invisible to an agent that only reads this file"
+        )
+    assert re.search(r"(?:bypasses|never reaches|does not reach)[^.]{0,80}server", lowered), (
+        "persona names the cross-session channel but no longer states that it "
+        "bypasses the AI Maestro server; without that, the 403 promise above it "
+        "reads as covering every send"
     )
