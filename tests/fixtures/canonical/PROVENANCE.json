@@ -2,11 +2,23 @@
   "_comment": "Provenance for the byte-for-byte canonical rule copies (TRDD-4983GIZW, ai-maestro#127 Ask 3/4). Regenerate by re-extracting the line ranges below and re-hashing.",
   "source_repo": "Emasoft/ai-maestro",
   "source_branch": "governance-rules",
-  "source_branch_is_remote": false,
-  "source_branch_note": "LOCAL-ONLY at capture time: `git ls-remote --heads origin` shows no governance-rules ref, so this text is NOT fetchable by CI or another clone. That is precisely why the canonical bytes are vendored here instead of read across repos.",
   "source_commit": "afba54bbb716748131021d0bd6ce8a048eb8967f",
   "source_version_line": "version: \"5.3.2\"",
   "captured_at": "2026-08-08T00:20:00+0200",
+  "remotes_checked_at": "2026-08-08T00:40:00+0200",
+  "remotes": {
+    "_why": "A remote-availability claim MUST name the remote. An earlier revision said 'not on the remote at all' after checking only `origin`, which is upstream \u2014 the same defect as citing a sha without naming its repo.",
+    "origin": {
+      "url": "https://github.com/23blocks-OS/ai-maestro.git",
+      "governance_rules_ref": null,
+      "note": "upstream: no governance-rules ref at all"
+    },
+    "fork": {
+      "url": "https://github.com/Emasoft/ai-maestro.git",
+      "governance_rules_ref": "2ca29e4389fb51e3b2143497fec10cc81e29761d",
+      "note": "HAS the branch, but at v5.2.0 \u2014 exactly 245 commits behind the local tip, 0 ahead"
+    }
+  },
   "blocks": {
     "R22": {
       "source_path": "docs/GOVERNANCE-RULES.md",
@@ -14,7 +26,9 @@
       "extent": "invariant paragraph + rule table + rationale; the dated '> Implementation' status blockquote is deliberately excluded \u2014 it is status, not rule",
       "sha256": "ed310c8cc5843a40b338962148748a3de12a8c8cf2f36387acc2469fd8a51774",
       "bytes": 2394,
-      "words": 380
+      "words": 380,
+      "identical_on_fork_remote": false,
+      "fork_divergence": "The fetchable fork copy still carries the PRE-FIX R22.2 template with a literal '@<owner>' in it \u2014 the exact form that pages a live account when a byline is copied verbatim. The vendored bytes are the corrected 2026-08-05 text. So for THIS block the canonical text is not merely newer on the remote; the remote's version is the bug."
     },
     "R23": {
       "source_path": "docs/GOVERNANCE-RULES.md",
@@ -22,7 +36,8 @@
       "extent": "invariant paragraph + rule table + rationale; the dated '> Implementation' status blockquote is deliberately excluded \u2014 it is status, not rule",
       "sha256": "5aaca4de781c817c67e6520c5aa707f34cdc115c96b4fd919719c05f49c201fc",
       "bytes": 2975,
-      "words": 477
+      "words": 477,
+      "identical_on_fork_remote": true
     }
   }
 }

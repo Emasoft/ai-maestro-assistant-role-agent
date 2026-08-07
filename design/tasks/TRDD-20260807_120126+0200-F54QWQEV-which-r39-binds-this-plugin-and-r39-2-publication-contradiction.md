@@ -3,7 +3,7 @@ trdd-id: F54QWQEV
 title: Which R39 binds this plugin, and R39.2 asserts a publication state that is false
 column: complete
 created: 2026-08-07T12:01:26+0200
-updated: 2026-08-08T00:28:58+0200
+updated: 2026-08-08T00:35:31+0200
 current-owner: ai-maestro-assistant-role-agent
 assignee: ai-maestro-assistant-role-agent
 task-type: docs
@@ -78,11 +78,23 @@ release-via: none
   2026-08-08 the local branch tip is `afba54bb` and the file reads `version: "5.3.2"`. The
   ruling cites `0329558c`, which is real and an ancestor — it had simply moved again by the
   time I checked. Re-measure rather than trusting any of these three.
-- **NEW, and it explains the whole shape of this card:** `governance-rules` is **not on the
-  remote at all** — `git ls-remote --heads origin` lists no such ref. It is local-only, so the
-  operative law is unreadable to CI, to any clone, and to every other contributor. That is the
-  same root cause as the consumed push authorization named in the ruling, and it is why this
-  plugin vendors the canonical bytes (see `TRDD-4983GIZW`) instead of reading them across repos.
+- **NEW, and it explains the whole shape of this card — CORRECTED 2026-08-08, read the corrected
+  form and not the first one.** I first wrote that `governance-rules` is "not on the remote at
+  all". That came from `git ls-remote --heads origin`, and **`origin` in `~/ai-maestro` is
+  UPSTREAM (`23blocks-OS/ai-maestro`), not the fork** — a remote-availability claim that does not
+  name its remote, which is the same defect as a sha citation that does not name its repo. The
+  measured per-remote facts:
+
+  | remote | url | `governance-rules` |
+  |---|---|---|
+  | `origin` | `23blocks-OS/ai-maestro` | **absent** |
+  | `fork` | `Emasoft/ai-maestro` | present at `2ca29e43` — v5.2.0, **exactly 245 behind** local, 0 ahead |
+
+  So the branch IS fetchable, from the fork, frozen before 2026-08-05. Publication is therefore
+  not one decision but **two staleness gaps** — upstream absent, fork 245 behind. The conclusion
+  survives: the *current* law (v5.3.2) is on no remote, so a plugin told "the branch binds you"
+  still cannot fetch what binds it, and this plugin vendors the canonical bytes
+  (see `TRDD-4983GIZW`) rather than read them across repos.
 - **NEXT ACTION: none by me.** `main`'s fate rides the USER's publication decision, which is the
   hub's to carry. Do NOT touch R39.2 — spec and catalog now agree.
 

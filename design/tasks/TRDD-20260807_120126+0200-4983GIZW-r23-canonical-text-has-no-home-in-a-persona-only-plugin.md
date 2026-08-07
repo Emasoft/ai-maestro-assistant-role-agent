@@ -3,7 +3,7 @@ trdd-id: 4983GIZW
 title: R23 canonical prohibition has no decision-time surface in a persona-only plugin
 column: complete
 created: 2026-08-07T12:01:26+0200
-updated: 2026-08-08T00:28:58+0200
+updated: 2026-08-08T00:35:31+0200
 current-owner: ai-maestro-assistant-role-agent
 assignee: ai-maestro-assistant-role-agent
 task-type: docs
@@ -39,10 +39,21 @@ release-via: publish
   canonical R22 (Ask 4) replacing this repo's independent phrasing of the same rule.
   `tests/test_canonical_rule_blocks.py` enforces both.
 - **The design decision worth not re-litigating:** the canonical bytes are **vendored** into
-  `tests/fixtures/canonical/` rather than read from the ai-maestro repo. Measured 2026-08-08:
-  `git ls-remote --heads origin` on ai-maestro lists **no `governance-rules` ref** — the branch
-  is LOCAL-ONLY. A cross-repo test would pass on one machine and fail in CI and every clone,
-  reporting the rule as enforced everywhere while enforcing it nowhere.
+  `tests/fixtures/canonical/` rather than read from the ai-maestro repo.
+- **CORRECTED 2026-08-08 — the reason is better than the one I first gave.** I first wrote
+  "the branch is LOCAL-ONLY", measured against `origin`, which in `~/ai-maestro` is UPSTREAM
+  (`23blocks-OS/ai-maestro`) and has no such ref. The **fork** (`Emasoft/ai-maestro`) DOES carry
+  `governance-rules`, at `2ca29e43` — v5.2.0, 245 commits behind. So the honest reason to vendor
+  is not unreachability but **which copy you would reach**:
+
+  | block | fetchable fork copy vs vendored bytes |
+  |---|---|
+  | R23 | **byte-identical** — reading it across repos would have been harmless |
+  | R22 | **DIFFERENT, and the remote's version is the bug** — the fork still carries the pre-fix R22.2 template with a literal `@<owner>`, the exact form that pages a live account when a byline is copied verbatim |
+
+  A cross-repo test would have pinned this plugin to whichever remote copy was reachable, and
+  for R22 that copy is the defect this repo already fixed once (`TRDD-3972YVFH`). That is a
+  stronger argument for vendoring than "the branch is unreachable" ever was.
 - **A second guard exists for a reason:** the fixture is sha256-pinned in `PROVENANCE.json`, so
   the obvious way to "fix" a drift failure — editing the fixture to match a corrupted persona —
   fails too. Proven by tampering, not assumed.
