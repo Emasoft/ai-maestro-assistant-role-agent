@@ -3,7 +3,7 @@ trdd-id: 92LA26H1
 title: Governance-readiness conformance delta for the ASSISTANT role-plugin against the ai-maestro SSOT
 column: planned
 created: 2026-08-07T20:52:42+0200
-updated: 2026-08-07T21:34:00+0200
+updated: 2026-08-07T21:02:10+0200
 current-owner: ai-maestro-assistant-role-agent
 assignee: ai-maestro-assistant-role-agent
 task-type: audit
@@ -135,9 +135,12 @@ gap in a generated commit rather than in a shipped surface.
 - [x] **F1 remediated** — all 3 legacy cards migrated `approval-tier: N` → `min-approval-requirement:`
       (`3 → user` ×2, `2 → manager` ×1). Per-card, reviewed, never a scripted sweep.
 - [x] **F2 remediated** — `assignee:` added to all 3 cards.
-- [ ] F3 filed as `column: proposal` (PRRD skeleton + G1.1 text) and routed to the MANAGER,
-      who carries it to the USER — golden authorship is USER-only.
-- [ ] F4 filed as `column: proposal` and routed to the MANAGER, who may approve it.
+- [x] **F3 filed** — `TRDD-3NQKQSQG` in `design/proposals/`, `min-approval-requirement: user`,
+      carrying the PRRD skeleton + the G1.1 text. Routed to the MANAGER, who carries it to the
+      USER; golden authorship is USER-only, so no agent may approve it.
+- [x] **F4 filed** — `TRDD-5KZQUOBS` in `design/proposals/`,
+      `min-approval-requirement: manager` (two independent §D3 signals: `.github/` and the
+      release pipeline). Routed to the MANAGER, who may approve it.
 - [ ] F5 — **not mine.** Escalated to the USER via the MANAGER; hold until the ruling returns.
 
 ## Approval log

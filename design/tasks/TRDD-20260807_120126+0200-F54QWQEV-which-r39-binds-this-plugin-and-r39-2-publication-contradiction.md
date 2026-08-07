@@ -4,7 +4,7 @@ title: Which R39 binds this plugin, and R39.2 asserts a publication state that i
 column: blocked
 pre-block-column: todo
 created: 2026-08-07T12:01:26+0200
-updated: 2026-08-07T21:34:00+0200
+updated: 2026-08-07T21:02:10+0200
 current-owner: ai-maestro-assistant-role-agent
 assignee: ai-maestro-assistant-role-agent
 task-type: docs
@@ -55,7 +55,7 @@ release-via: none
   So this was never a spec defect — it was a **PROPAGATION GAP**. The correction landed in the
   SPEC on 2026-07-22 under the spec-first authority inversion; the CATALOG step lagged it.
 
-- **THE GAP IS NOW CLOSED — measured 2026-08-07T21:30, superseding the row above.** The CATALOG
+- **THE GAP IS NOW CLOSED — measured 2026-08-07T20:58, superseding the row above.** The CATALOG
   on `governance-rules` now reads *"**PUBLISHED** — `Emasoft/ai-maestro-assistant-role-agent`,
   public since 2026-07-22 and listed in the `ai-maestro-plugins` marketplace manifest"*, with the
   `PREDEFINED_ROLE_PLUGIN_NAMES` omission restated as an **open question** rather than a
