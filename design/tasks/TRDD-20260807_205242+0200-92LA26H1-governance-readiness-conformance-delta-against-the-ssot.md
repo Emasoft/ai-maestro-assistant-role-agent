@@ -1,9 +1,10 @@
 ---
 trdd-id: 92LA26H1
 title: Governance-readiness conformance delta for the ASSISTANT role-plugin against the ai-maestro SSOT
-column: planned
+column: complete
 created: 2026-08-07T20:52:42+0200
-updated: 2026-08-07T21:02:10+0200
+updated: 2026-08-08T00:03:10+0200
+eht: [3NQKQSQG, 5KZQUOBS]
 current-owner: ai-maestro-assistant-role-agent
 assignee: ai-maestro-assistant-role-agent
 task-type: audit
@@ -21,16 +22,23 @@ release-via: none
 
 # Governance-readiness conformance delta for the ASSISTANT role-plugin against the ai-maestro SSOT
 
-## ⏵ STATE — READ THIS FIRST ON RESUME (authoritative; supersedes the body) — 2026-08-07
+## ⏵ STATE — READ THIS FIRST ON RESUME (authoritative; supersedes the body) — 2026-08-08
 
-- **The audit itself is DONE.** The delta table below is the deliverable and it is complete
-  for the five axes the ai-maestro session named, plus the axes it did not name that the SSOT
-  binds anyway.
-- **Nothing has been REMEDIED yet.** This card holds findings only. Not one line of the
-  persona, the workflows, the tests, or the existing three TRDDs was changed by this audit.
-- **NEXT ACTION (one step):** file the F1 and F5 remediations as Tier-0 cards
-  (`min-approval-requirement: none`) and work them; file F3 and F4 as `column: proposal`
-  cards in `design/proposals/` and route them to the MANAGER — they are above my rung.
+- **CLOSED — `column: complete`.** The audit and every remediation that was mine to make are
+  done. Nothing here is waiting on me; each remaining item has its own card, so this one no
+  longer needs to sit in a work column claiming activity.
+- **The audit deliverable** is the delta table below: complete for the five axes the ai-maestro
+  session named, plus the axes it did not name that the SSOT binds anyway.
+- **F1 and F2 are REMEDIED in tree** (`0fdf4c6`) — all 3 legacy cards migrated off
+  `approval-tier:` and given `assignee:`.
+- **F3 and F4 are FILED, not applied** — `TRDD-3NQKQSQG` (floor `user`) and `TRDD-5KZQUOBS`
+  (floor `manager`), both `column: proposal`, both routed to the MANAGER. They are this card's
+  EHTs; it reached `complete` because filing them WAS the required action at my rung — applying
+  them is not mine to do.
+- **F5 is NOT this card's** — `TRDD-3972YVFH` owns it and holds for the USER's delivery ruling.
+- **NEXT ACTION: none by me.** Resume only if the MANAGER refuses a proposal or the audit needs
+  re-running against a newer SSOT — and if so, re-verify the branch tip first rather than
+  trusting this card's table.
 - **Load-bearing gotcha:** F1's fix is an ON-NEXT-TOUCH migration, never a mass rewrite, and
   a mechanical migration must NOT bump `updated:` on the card it touches (the board sorts on
   `updated:`; a repair pass that bumps it silently reorders every card).
