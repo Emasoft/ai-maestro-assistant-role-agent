@@ -3,7 +3,7 @@ trdd-id: 92LA26H1
 title: Governance-readiness conformance delta for the ASSISTANT role-plugin against the ai-maestro SSOT
 column: planned
 created: 2026-08-07T20:52:42+0200
-updated: 2026-08-07T20:52:42+0200
+updated: 2026-08-07T21:34:00+0200
 current-owner: ai-maestro-assistant-role-agent
 assignee: ai-maestro-assistant-role-agent
 task-type: audit
@@ -34,10 +34,10 @@ release-via: none
 - **Load-bearing gotcha:** F1's fix is an ON-NEXT-TOUCH migration, never a mass rewrite, and
   a mechanical migration must NOT bump `updated:` on the card it touches (the board sorts on
   `updated:`; a repair pass that bumps it silently reorders every card).
-- **SUPERSEDED — do NOT carry forward:** the five blob SHAs the ai-maestro session cited for
-  the SSOT files (`95052d6e`, `b337bb19`, `06d9f439`, `618f7044`, `43cf1264`). None of them
-  resolve — see *Provenance*. The PATHS are correct and were read directly; only the SHAs are
-  wrong. Do not try to check out those SHAs.
+- **SUPERSEDED — do NOT carry forward:** this card's first revision claimed the five SHAs I was
+  given for the SSOT files "do not resolve". **That claim was FALSE and is retracted** — all five
+  are **commits** on `ai-maestro@governance-rules`. See *Provenance*, which now records both the
+  correct facts and the method error that produced the wrong one.
 - **Artifacts to read first:** this card's delta table, then the SSOT paths in *Provenance*.
 
 ## Why this card exists
@@ -54,26 +54,35 @@ and changes no governance. It is therefore a **self-mandate** (`mandate: true`,
 `mandated-by: self`), born approved, authored directly in `design/tasks/`. No approval request
 was sent and none was owed.
 
-## Provenance — what was read, and one correction to the input
+## Provenance — what was read, and a method error of my own
 
 Read directly from `~/ai-maestro` on branch `governance-rules` (tip
 `af7f5ed8f2652628beee7061848ef58ae292ad6f`, working tree clean, so branch == tree):
 
-| SSOT path | blob on branch == working tree | SHA I was given |
+| SSOT path | blob (branch == tree) | SHA I was given — `git cat-file -t` in `~/ai-maestro` |
 |---|---|---|
-| `docs/GOVERNANCE-RULES.md` | `c873256b` | `95052d6e` — does not resolve |
-| `rules/aimaestro/aimaestro-trdd-approval.md` | `ed1bc353` | `b337bb19` — does not resolve |
-| `rules/aimaestro/aimaestro-kanban-multiagent.md` | `2fdc9bd9` | `06d9f439` — does not resolve |
-| `rules/aimaestro/aimaestro-manager-approval-defaults.md` | `92c3159f` | `618f7044` — does not resolve |
-| `rules/aimaestro/aimaestro-prrd-governance.md` | `17eca23c` | `43cf1264` — does not resolve |
+| `docs/GOVERNANCE-RULES.md` | `c873256b` | `95052d6e` — **commit**, on branch |
+| `rules/aimaestro/aimaestro-trdd-approval.md` | `ed1bc353` | `b337bb19` — **commit**, on branch |
+| `rules/aimaestro/aimaestro-kanban-multiagent.md` | `2fdc9bd9` | `06d9f439` — **commit**, on branch |
+| `rules/aimaestro/aimaestro-manager-approval-defaults.md` | `92c3159f` | `618f7044` — **commit**, on branch |
+| `rules/aimaestro/aimaestro-prrd-governance.md` | `17eca23c` | `43cf1264` — **commit**, on branch |
 
-**All five cited SHAs are wrong; all five paths are right.** Each cited value matches neither
-the blob on `governance-rules` nor `git hash-object` of the working-tree file, and the tree is
-clean so those two agree with each other. The content was verified present by reading it
-(R38/R39/R39.10 tables, the `min-approval-requirement` section, the D3 floor table, G1.1), so
-the audit rests on the text, not on the identifiers. This is recorded because a SHA that
-resolves to nothing is indistinguishable from one I failed to fetch, and the next reader
-should not spend the time I did establishing which it was.
+**All five paths are right and all five SHAs resolve.** They are `git log -1 --format=%h -- <path>`
+values — the last commit that touched each file — not blob hashes. I compared them against blob
+hashes, saw no match, and reported "does not resolve" **without ever running `git cat-file -t`**.
+That is asserting a negative from a single wrong-type comparison, and it was wrong.
+
+Two defects, one shared fix, recorded so neither recurs:
+
+- **Mine:** a failed resolution must name **where it was attempted** and must actually attempt
+  resolution — `git cat-file -t <sha>` in the named repo — before "does not resolve" is written
+  down. A mismatch against one object type is not evidence of non-existence.
+- **The citer's:** an unlabeled short SHA invites exactly this. A citation names its **type** and
+  its **repo**: "commit `95052d6e` in `ai-maestro@governance-rules`".
+
+The audit's substance is unaffected: it rests on the text, which was read directly (the R38/R39
+tables, the `min-approval-requirement` section, the §D3 floor table, G1.1) — never on the
+identifiers.
 
 ## The delta table
 
@@ -123,8 +132,13 @@ gap in a generated commit rather than in a shipped surface.
 - [x] Each row carries rule → current state → required change → the floor of that change.
 - [x] Findings state what was checked, not merely that things are clean.
 - [x] Committed to this repo.
-- [ ] F1 and F5 remediation cards filed (Tier 0) and worked.
-- [ ] F3 and F4 filed as `column: proposal` and routed to the MANAGER.
+- [x] **F1 remediated** — all 3 legacy cards migrated `approval-tier: N` → `min-approval-requirement:`
+      (`3 → user` ×2, `2 → manager` ×1). Per-card, reviewed, never a scripted sweep.
+- [x] **F2 remediated** — `assignee:` added to all 3 cards.
+- [ ] F3 filed as `column: proposal` (PRRD skeleton + G1.1 text) and routed to the MANAGER,
+      who carries it to the USER — golden authorship is USER-only.
+- [ ] F4 filed as `column: proposal` and routed to the MANAGER, who may approve it.
+- [ ] F5 — **not mine.** Escalated to the USER via the MANAGER; hold until the ruling returns.
 
 ## Approval log
 
