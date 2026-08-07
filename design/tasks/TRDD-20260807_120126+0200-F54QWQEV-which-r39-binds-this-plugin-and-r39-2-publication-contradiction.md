@@ -4,14 +4,14 @@ title: Which R39 binds this plugin, and R39.2 asserts a publication state that i
 column: blocked
 pre-block-column: todo
 created: 2026-08-07T12:01:26+0200
-updated: 2026-08-07T12:01:26+0200
+updated: 2026-08-07T18:42:00+0200
 current-owner: ai-maestro-assistant-role-agent
 task-type: docs
 scope: project
 project-id: ai-maestro-assistant-role-agent
 approval-tier: 3
 blocked-by: [ai-maestro#127]
-external-refs: [ai-maestro#67, ai-maestro#118, ai-maestro#120, ai-maestro#127]
+external-refs: [ai-maestro#67, ai-maestro#86, ai-maestro#118, ai-maestro#120, ai-maestro#127]
 relevant-rules: []
 release-via: none
 ---
@@ -42,9 +42,28 @@ release-via: none
   `GOVERNANCE-RULES.md` that #67 calls non-operative.
 - **Not a self-heal failure.** The overlay IS seeded on this host, just not into a plugin dev repo
   — read as "this repo is not a registered agent workdir", not as a broken `dep-rules` invariant.
-- **BLOCKED ON:** ai-maestro#127 Asks 1 and 2.
-- **NEXT ACTION (once ruled):** update the persona's rule citations to name whichever layer is
-  operative, and reconcile or amend R39.2 per the ruling.
+- **ASK 2 IS ANSWERED — and it was already decided before I asked (ai-maestro#86, closed
+  2026-07-29). I missed it because I searched OPEN issues.** Measured 2026-08-07, same branch,
+  two different documents:
+
+  | file | R39.2 says |
+  |---|---|
+  | `design/specs/governance-spec.md:1571` (the SPEC) | *"**PUBLISHED** — public since 2026-07-22, listed in the marketplace manifest … remains absent from `PREDEFINED_ROLE_PLUGIN_NAMES`, which is now an **OPEN QUESTION** rather than a settled consequence of being local"* |
+  | `docs/GOVERNANCE-RULES.md` (the CATALOG) | *"a **LOCAL/D4 source** … intentionally **NOT a published GitHub repo**"* |
+
+  So this was never a spec defect — it is a **PROPAGATION GAP**. The correction landed in the
+  SPEC on 2026-07-22 under the spec-first authority inversion; the CATALOG step never ran, and
+  the mirror still carries the false claim **16 days later**. The catalog is what I read, and
+  what a compliance check would read.
+- **The `PREDEFINED_ROLE_PLUGIN_NAMES` half is SETTLED: the ASSISTANT stays OUT, and the tuple
+  must NOT be "fixed" to 9.** Ruled on #86 F2 by the MANAGER as the most-affected consumer
+  (zero references to the tuple; title→plugin resolution uses separate maps). The *omission* was
+  always right; only its stated reason ("local ⇒ not predefined") was dead. Correct grounds:
+  **user-bound, not fleet-bound.** Do not re-open this.
+- **BLOCKED ON:** ai-maestro#127 Ask 1 only — Ask 2 is now evidence-answered above.
+- **NEXT ACTION (once Ask 1 is ruled):** update the persona's rule citations to name whichever
+  layer is operative. Do NOT touch R39.2 — the SPEC is already correct and the catalog is the
+  hub's to re-mirror.
 
 ## Ask 1 — which R39
 
