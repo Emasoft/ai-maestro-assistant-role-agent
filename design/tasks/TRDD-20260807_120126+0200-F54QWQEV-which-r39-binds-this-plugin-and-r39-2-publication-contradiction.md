@@ -1,17 +1,16 @@
 ---
 trdd-id: F54QWQEV
 title: Which R39 binds this plugin, and R39.2 asserts a publication state that is false
-column: blocked
-pre-block-column: todo
+column: complete
 created: 2026-08-07T12:01:26+0200
-updated: 2026-08-07T21:02:10+0200
+updated: 2026-08-08T00:28:58+0200
 current-owner: ai-maestro-assistant-role-agent
 assignee: ai-maestro-assistant-role-agent
 task-type: docs
 scope: project
 project-id: ai-maestro-assistant-role-agent
 min-approval-requirement: user
-blocked-by: [ai-maestro#127]
+blocked-by: []
 external-refs: [ai-maestro#67, ai-maestro#86, ai-maestro#118, ai-maestro#120, ai-maestro#127]
 relevant-rules: []
 release-via: none
@@ -67,10 +66,25 @@ release-via: none
   (zero references to the tuple; title→plugin resolution uses separate maps). The *omission* was
   always right; only its stated reason ("local ⇒ not predefined") was dead. Correct grounds:
   **user-bound, not fleet-bound.** Do not re-open this.
-- **BLOCKED ON:** ai-maestro#127 Ask 1 only — Ask 2 is now evidence-answered above.
-- **NEXT ACTION (once Ask 1 is ruled):** update the persona's rule citations to name whichever
-  layer is operative. Do NOT touch R39.2 — the SPEC is already correct and the catalog is the
-  hub's to re-mirror.
+- **ASK 1 IS RULED — `column: complete`.** ai-maestro#127 comment `5222763179`
+  (2026-08-07T22:23:48Z, verified first-hand): **the `governance-rules` branch binds**, now
+  v5.3.2. This persona's R39.8/.9/.10 citations implement current law and were correct all
+  along. Three qualifications shipped into the persona's new *Which copy of the rules binds
+  you* section: the 4.8.0 authority inversion (spec over catalog); `main`'s copy asserts
+  completeness falsely, so a compliance check against the default branch is the document being
+  wrong, not this plugin; and the interim fairness rule shields an agent that read `main` — not
+  this one, which read the branch.
+- **Measurement correction for the table above:** the tip is no longer `af7f5ed8`/v5.2.0. As of
+  2026-08-08 the local branch tip is `afba54bb` and the file reads `version: "5.3.2"`. The
+  ruling cites `0329558c`, which is real and an ancestor — it had simply moved again by the
+  time I checked. Re-measure rather than trusting any of these three.
+- **NEW, and it explains the whole shape of this card:** `governance-rules` is **not on the
+  remote at all** — `git ls-remote --heads origin` lists no such ref. It is local-only, so the
+  operative law is unreadable to CI, to any clone, and to every other contributor. That is the
+  same root cause as the consumed push authorization named in the ruling, and it is why this
+  plugin vendors the canonical bytes (see `TRDD-4983GIZW`) instead of reading them across repos.
+- **NEXT ACTION: none by me.** `main`'s fate rides the USER's publication decision, which is the
+  hub's to carry. Do NOT touch R39.2 — spec and catalog now agree.
 
 ## Ask 1 — which R39
 
@@ -108,8 +122,13 @@ Nothing has been changed pending the ruling.
 
 ## Acceptance criteria
 
-- [ ] Ruling recorded: which layer (DEP overlay / `GOVERNANCE-RULES.md` / other) is operative for R39.
-- [ ] If the overlay is operative, a decision on its total absence of ASSISTANT content.
+- [x] Ruling recorded: which layer is operative for R39. **`docs/GOVERNANCE-RULES.md` on the
+      `governance-rules` branch**, with `design/specs/governance-spec.md` authoritative over it
+      where they differ (4.8.0 authority inversion).
+- [x] The overlay question is answered by that: the DEP overlay is not the operative layer for
+      R39, so its zero ASSISTANT content is not the gap it looked like.
 - [x] R39.2 either amended to match reality, or a de-publication decision taken by the USER.
       **Amended** — `95052d6e` in `ai-maestro@governance-rules`; catalog and spec now agree.
-- [ ] Persona citations updated to name the operative layer.
+- [x] Persona citations updated to name the operative layer — new *Which copy of the rules
+      binds you* section, carrying the ruling and its three qualifications so a future session
+      does not re-derive them.

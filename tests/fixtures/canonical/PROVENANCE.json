@@ -1,0 +1,28 @@
+{
+  "_comment": "Provenance for the byte-for-byte canonical rule copies (TRDD-4983GIZW, ai-maestro#127 Ask 3/4). Regenerate by re-extracting the line ranges below and re-hashing.",
+  "source_repo": "Emasoft/ai-maestro",
+  "source_branch": "governance-rules",
+  "source_branch_is_remote": false,
+  "source_branch_note": "LOCAL-ONLY at capture time: `git ls-remote --heads origin` shows no governance-rules ref, so this text is NOT fetchable by CI or another clone. That is precisely why the canonical bytes are vendored here instead of read across repos.",
+  "source_commit": "afba54bbb716748131021d0bd6ce8a048eb8967f",
+  "source_version_line": "version: \"5.3.2\"",
+  "captured_at": "2026-08-08T00:20:00+0200",
+  "blocks": {
+    "R22": {
+      "source_path": "docs/GOVERNANCE-RULES.md",
+      "source_lines": "1191-1201",
+      "extent": "invariant paragraph + rule table + rationale; the dated '> Implementation' status blockquote is deliberately excluded \u2014 it is status, not rule",
+      "sha256": "ed310c8cc5843a40b338962148748a3de12a8c8cf2f36387acc2469fd8a51774",
+      "bytes": 2394,
+      "words": 380
+    },
+    "R23": {
+      "source_path": "docs/GOVERNANCE-RULES.md",
+      "source_lines": "1207-1220",
+      "extent": "invariant paragraph + rule table + rationale; the dated '> Implementation' status blockquote is deliberately excluded \u2014 it is status, not rule",
+      "sha256": "5aaca4de781c817c67e6520c5aa707f34cdc115c96b4fd919719c05f49c201fc",
+      "bytes": 2975,
+      "words": 477
+    }
+  }
+}

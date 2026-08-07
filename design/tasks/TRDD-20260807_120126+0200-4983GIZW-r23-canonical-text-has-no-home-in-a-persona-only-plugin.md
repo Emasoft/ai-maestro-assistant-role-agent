@@ -1,17 +1,16 @@
 ---
 trdd-id: 4983GIZW
 title: R23 canonical prohibition has no decision-time surface in a persona-only plugin
-column: blocked
-pre-block-column: todo
+column: complete
 created: 2026-08-07T12:01:26+0200
-updated: 2026-08-07T12:01:26+0200
+updated: 2026-08-08T00:28:58+0200
 current-owner: ai-maestro-assistant-role-agent
 assignee: ai-maestro-assistant-role-agent
 task-type: docs
 scope: project
 project-id: ai-maestro-assistant-role-agent
 min-approval-requirement: manager
-blocked-by: [ai-maestro#127]
+blocked-by: []
 external-refs: [ai-maestro#107, ai-maestro#127, ai-maestro-assistant-role-agent#1]
 relevant-rules: []
 release-via: publish
@@ -31,11 +30,26 @@ release-via: publish
   `commands/`, no `hooks/`** — `.agent.toml` declares `[skills] primary/secondary/specialized = []`
   deliberately and reaches four AI Maestro skills by name via `[dependencies].external_skills`.
   There is nothing to copy into.
-- **BLOCKED ON:** the hub's ruling on ai-maestro#127 Ask 3. Two candidate answers with opposite
-  consequences (below); picking one unilaterally is the failure this card exists to avoid.
-- **NEXT ACTION (once the ruling lands):** apply the chosen option, then add a conformance test
-  asserting the canonical block byte-for-byte, falsified against tampered text before commit.
-- **SUPERSEDED — do NOT carry forward:** nothing yet.
+- **RULED AND DONE — `column: complete`.** ai-maestro#127 Ask 3 (comment `5222763179`,
+  2026-08-07T22:23:48Z, verified first-hand) chose **Option 1**: for a persona-only plugin the
+  persona IS the decision-time surface, so the canonical R23 block goes there, **plus** a
+  byte-for-byte conformance test — the test IS the checklist. Option 3 rejected on #107's own
+  *"duplication, verified. Not indirection."*; Option 2 rejected as compliance theater.
+- **Shipped:** canonical R23 in the persona between `CANONICAL-BEGIN/END: R23` markers, plus
+  canonical R22 (Ask 4) replacing this repo's independent phrasing of the same rule.
+  `tests/test_canonical_rule_blocks.py` enforces both.
+- **The design decision worth not re-litigating:** the canonical bytes are **vendored** into
+  `tests/fixtures/canonical/` rather than read from the ai-maestro repo. Measured 2026-08-08:
+  `git ls-remote --heads origin` on ai-maestro lists **no `governance-rules` ref** — the branch
+  is LOCAL-ONLY. A cross-repo test would pass on one machine and fail in CI and every clone,
+  reporting the rule as enforced everywhere while enforcing it nowhere.
+- **A second guard exists for a reason:** the fixture is sha256-pinned in `PROVENANCE.json`, so
+  the obvious way to "fix" a drift failure — editing the fixture to match a corrupted persona —
+  fails too. Proven by tampering, not assumed.
+- **SUPERSEDED — do NOT carry forward:** the framing that this plugin *cannot* host canonical
+  rule text. It can; the missing piece was never a surface, it was the checklist.
+- **NEXT ACTION: none.** If the upstream rule changes, re-capture the fixture and update
+  `PROVENANCE.json` in the same commit; the test will tell you loudly.
 
 ## The question
 
@@ -69,7 +83,16 @@ the instance.
 
 ## Acceptance criteria
 
-- [ ] Hub ruling recorded on ai-maestro#127 Ask 3.
-- [ ] Canonical R23 text present in whichever surface the ruling names, byte-for-byte.
-- [ ] Conformance test asserting the copy matches canonical, verified to FAIL before the fix.
-- [ ] No pointer/indirection substituted for the text (per #107's ruling).
+- [x] Hub ruling recorded on ai-maestro#127 Ask 3 (comment `5222763179`).
+- [x] Canonical R23 text present in the persona, byte-for-byte (and R22 likewise, per Ask 4).
+- [x] Conformance test asserting the copy matches canonical, **falsified three ways** before
+      commit: a one-word drift inside the block fails with `DRIFTED from the canonical text`;
+      deleting a marker fails with `no CANONICAL-BEGIN/END block for R22`; editing the fixture
+      to match a corrupted persona fails with `no longer matches its recorded sha256`.
+- [x] No pointer/indirection substituted for the text (per #107's ruling).
+- [x] Derived fix: the persona word budget now measures **authored** prose only. A
+      byte-for-byte mandate and a shrinkable-prose budget are in direct tension — counting
+      canonical text would make every upstream rule edit a spurious budget failure whose only
+      available remedy is deleting authored guidance, and would put a standing incentive on
+      trimming the canonical copy. Guarded by its own coverage test so the exclusion cannot
+      silently stop working.

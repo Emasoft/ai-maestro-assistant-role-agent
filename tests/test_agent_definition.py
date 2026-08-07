@@ -146,13 +146,43 @@ _WORD_FLOOR = 3000
 _WORD_CEILING = 5000
 
 
+_CANONICAL_BLOCK_RE = re.compile(r"<!-- CANONICAL-BEGIN: \w+ -->.*?<!-- CANONICAL-END: \w+ -->", re.DOTALL)
+
+
 def test_agent_body_stays_within_its_word_budget(agent_body: str) -> None:
-    """The persona's word count sits inside the agreed [floor, ceiling] window."""
-    words = len(agent_body.split())
+    """The persona's AUTHORED word count sits inside the agreed [floor, ceiling] window.
+
+    Canonical governance blocks are excluded from the count, and that exclusion
+    is the point rather than a loophole. The budget exists to stop MY prose
+    from sprawling — prose I can tighten. Canonical text is reproduced
+    byte-for-byte under ai-maestro#107 and may not be tightened at all, so
+    counting it would turn every upstream rule edit into a spurious budget
+    failure whose only available "fix" is to delete authored guidance that was
+    never the problem. Worse, it would put a standing incentive on trimming the
+    canonical copy, which is exactly the drift the copy exists to prevent.
+
+    tests/test_canonical_rule_blocks.py guards the excluded regions, so nothing
+    escapes review by living inside the markers.
+    """
+    authored = _CANONICAL_BLOCK_RE.sub("", agent_body)
+    words = len(authored.split())
     assert _WORD_FLOOR <= words <= _WORD_CEILING, (
-        f"persona is {words} words, outside the [{_WORD_FLOOR}, {_WORD_CEILING}] budget; "
+        f"persona is {words} AUTHORED words (canonical blocks excluded), outside the "
+        f"[{_WORD_FLOOR}, {_WORD_CEILING}] budget; "
         "if this growth/shrink is intended, move the bound in one deliberate edit"
     )
+
+
+def test_the_word_budget_actually_excludes_canonical_blocks(agent_body: str) -> None:
+    """Coverage: the exclusion is real and is doing measurable work.
+
+    Asserted separately because a regex that matched nothing would leave the
+    budget silently counting canonical text again, and the only symptom would
+    be a confusing failure months later after an upstream rule grew.
+    """
+    authored = _CANONICAL_BLOCK_RE.sub("", agent_body)
+    assert len(authored) < len(agent_body), "no canonical block was excluded — marker drift?"
+    assert "R23.7" not in authored, "canonical rule rows leaked into the authored count"
 
 
 def test_forbidden_list_is_intact(agent_body: str) -> None:
