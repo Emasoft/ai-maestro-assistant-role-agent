@@ -183,10 +183,16 @@ jobs:
           # wherever it sits, and any @word in prose linkifies and pages a
           # live account (TRDD-3972YVFH is that exact harm, still live in
           # v0.3.2). Plain words identify the author just as well.
-          {
-            printf '_Released by the ASSISTANT role-plugin (via the shared owner gh auth)._\n\n'
-            cat changelog.txt
-          } > changelog.body && mv changelog.body changelog.txt
+          # Idempotent: the full-file fallback above already carries this line,
+          # because cliff.toml puts it in the changelog HEADER (so releases cut
+          # by publish.py, which feeds the whole file, are covered too). Only the
+          # extracted-section paths lack it, so prepend only when absent.
+          if ! grep -qF '_Released by the ASSISTANT role-plugin' changelog.txt; then
+            {
+              printf '_Released by the ASSISTANT role-plugin (via the shared owner gh auth)._\n\n'
+              cat changelog.txt
+            } > changelog.body && mv changelog.body changelog.txt
+          fi
           echo "changelog_file=changelog.txt" >> "$GITHUB_OUTPUT"
 
       - name: Compute per-asset SHA256SUMS

@@ -5,6 +5,8 @@
 header = """
 # Changelog
 
+_Released by the ASSISTANT role-plugin (via the shared owner gh auth)._
+
 All notable changes to this project will be documented in this file.
 
 """
