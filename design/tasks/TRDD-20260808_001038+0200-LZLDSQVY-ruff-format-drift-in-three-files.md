@@ -3,7 +3,7 @@ trdd-id: LZLDSQVY
 title: Ruff-format drift in three files, with the bulk of it in the release-pipeline script
 column: dev
 created: 2026-08-08T00:10:38+0200
-updated: 2026-08-08T00:10:38+0200
+updated: 2026-08-08T05:04:00+0200
 current-owner: ai-maestro-assistant-role-agent
 assignee: ai-maestro-assistant-role-agent
 task-type: refactor
@@ -30,9 +30,18 @@ release-via: none
 - **`scripts/publish.py` is NOT, and that is a deliberate open decision, not an oversight.**
   67 hunks, and applying them **destroys deliberate column alignment** in the release-pipeline
   script. See *The publish.py question*.
-- **NEXT ACTION:** the USER (or the MANAGER) answers the publish.py question. Until then this
-  card sits at `dev` with real remaining work, which is honest — it is not blocked, it is
-  waiting on a preference only a human holds.
+- **ANSWERED 2026-08-08 by the USER, and the answer dissolves the question I asked.** I framed
+  it as a three-way style preference (apply / exempt / accept). The USER's ruling:
+  *"just ask the cpv agent to update the plugin to the last publish canon. unless your problem
+  is more complex, then you need to open an issue on the cpv plugin repo."*
+- **Why that is the better answer:** `scripts/publish.py` is not this repo's code to style — it
+  is CPV's **canonical pipeline**, vendored here. Formatting it locally would create exactly the
+  local divergence the canon exists to prevent, and the drift would return on the next canon
+  sync. Measured: this repo pins CPV **v3.1.0** while the latest release is **v5.3.0** — two
+  majors behind, which is the real defect the format drift was a symptom of.
+- **NEXT ACTION:** CPV agent brings the pipeline to canon; the formatting resolves as a
+  consequence, not as a decision. If the migration turns out to need a CPV-side change, file it
+  as an issue on the CPV repo rather than patching locally (PRRD S7.1).
 
 ## Why this card exists separately
 
