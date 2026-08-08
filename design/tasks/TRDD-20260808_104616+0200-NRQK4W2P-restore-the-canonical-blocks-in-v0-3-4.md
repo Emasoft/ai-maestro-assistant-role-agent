@@ -59,7 +59,9 @@ release-via: publish
 - **NEXT ACTION:** when CPV#201 lands (or CPV#198 lands and the gate tolerates a demoted NIT),
   re-capture the canonical text **from the spec as primary** (doc second, per Ask 1), restore the
   `CANONICAL-BEGIN/END` blocks, confirm the 5 skipped tests turn into passes, re-validate to
-  exit 0, and ship v0.3.4.
+  exit 0, and ship it in the NEXT release — whatever number that is. Do not chase a version
+  number here: this card was written naming v0.3.4, and v0.3.4 then shipped for unrelated work
+  while CPV#201 was still open. The restore is defined by its CONTENT, not by a version.
 
 ## Why this exists rather than "we'll remember"
 
@@ -79,7 +81,8 @@ reader to find out this was deliberate and temporary.
 - [ ] `PROVENANCE.json` re-measured against the then-current fork tip in the same commit
       (it moved twice in one day on 2026-08-08; assume it moved again).
 - [ ] The 5 skipped tests report as PASSED, not skipped — that is the proof the restore landed.
-- [ ] Full validation exits 0 and v0.3.4 is published.
+- [ ] Full validation exits 0 and the restore is published (any version; see the STATE note —
+      v0.3.4 was consumed by unrelated work on 2026-08-08 while this card was still blocked).
 
 ## Approval log
 
