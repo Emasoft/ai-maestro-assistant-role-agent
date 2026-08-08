@@ -1,9 +1,9 @@
 ---
 trdd-id: LZLDSQVY
 title: Ruff-format drift in three files, with the bulk of it in the release-pipeline script
-column: dev
+column: complete
 created: 2026-08-08T00:10:38+0200
-updated: 2026-08-08T05:04:00+0200
+updated: 2026-08-08T05:52:00+0200
 current-owner: ai-maestro-assistant-role-agent
 assignee: ai-maestro-assistant-role-agent
 task-type: refactor
@@ -116,8 +116,16 @@ codebase, so it is asked, not assumed.
 - [x] `tests/test_cpv_network_resilience.py` formatted; the error-string VALUES verified
       identical, since they are matched against real network failures.
 - [x] Full suite green after the change.
-- [ ] Decision recorded on `scripts/publish.py` (apply / exempt / accept).
-- [ ] Whichever is chosen, applied — and if apply: `ruff format --check` green repo-wide.
+- [x] Decision recorded on `scripts/publish.py`: **EXEMPT from format**, and the canon sync is
+      what settled it rather than the style argument. Measured AFTER migrating to canon v5.3.0:
+      `ruff format --check` STILL reports `publish.py` — canon does not ship it format-clean.
+      So my earlier claim that the sync would resolve the drift as a consequence was WRONG, and
+      the finding inverts the answer: the file is vendored canon, canon is not ruff-formatted,
+      so formatting it locally manufactures the divergence PRRD S7.1 forbids and the next sync
+      reverts it. `[tool.ruff.format] exclude` declares that honestly.
+- [x] Applied — `ruff format --check` green repo-wide (9 files, 0 to reformat), and
+      `ruff check scripts/publish.py` still PASSES, so the file is linted, not hidden. Excluding
+      from format only (not from lint) is the part that keeps this from being a suppression.
 
 ## Approval log
 
