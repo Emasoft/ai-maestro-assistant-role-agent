@@ -1,9 +1,12 @@
 ---
 trdd-id: 3NQKQSQG
 title: Adopt a PRRD for this plugin with G1.1 as its first golden rule
-column: proposal
+column: complete
 created: 2026-08-07T21:00:42+0200
-updated: 2026-08-07T21:00:42+0200
+updated: 2026-08-08T05:01:29+0200
+approved: true
+approval-judge: user
+approval-datetime: 2026-08-08T05:01:29+0200
 current-owner: ai-maestro-assistant-role-agent
 assignee: ai-maestro-assistant-role-agent
 task-type: docs
@@ -106,3 +109,17 @@ overlay evolves without a USER round-trip.
 - 2026-08-07T21:00:42+0200 — FILED as a proposal by the ASSISTANT
   (min-approval-requirement: user). Routed to the MANAGER, which carries it to the USER;
   golden authorship is USER-only, so no agent may approve this card.
+- 2026-08-08T05:01:29+0200 — **APPROVED by the USER** directly, in session
+  (min-approval-requirement: user — the only rung that can authorize a golden rule).
+  Verbatim: *"PRRD are specific for each projects, but since this is a plugin of the ai-maestro
+  project, clearly can be shared. so yes, adopt it."*
+  **One material amendment to the proposal, forced by measurement, not by preference:** the USER
+  approved SHARING ai-maestro's PRRD. There is no ai-maestro PRRD to share — verified across the
+  working tree and the `governance-rules` branch, the only hits are the governance *rule* file
+  and an open bootstrap proposal (`61KLQT7N`, filed 2026-07-26). So this plugin's own PRRD is
+  created now to stand in, and it says so in its own preamble with a standing instruction:
+  when ai-maestro's PRRD lands, every rule here that duplicates one there is DELETED and CITED,
+  never kept in parallel. Adopting the USER's intent required writing down the gap rather than
+  silently doing something narrower.
+  Promoted `proposal → complete` and moved to `design/tasks/`; `design/requirements/PRRD.md`
+  created (verified NOT gitignored, so it is tracked and pushed as a PRRD must be).
