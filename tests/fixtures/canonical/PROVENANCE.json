@@ -5,7 +5,7 @@
   "source_commit": "afba54bbb716748131021d0bd6ce8a048eb8967f",
   "source_version_line": "version: \"5.3.2\"",
   "captured_at": "2026-08-08T00:20:00+0200",
-  "remotes_checked_at": "2026-08-08T00:40:00+0200",
+  "remotes_checked_at": "2026-08-08T10:45:00+0200",
   "remotes": {
     "_why": "A remote-availability claim MUST name the remote. An earlier revision said 'not on the remote at all' after checking only `origin`, which is upstream \u2014 the same defect as citing a sha without naming its repo.",
     "origin": {
@@ -15,8 +15,8 @@
     },
     "fork": {
       "url": "https://github.com/Emasoft/ai-maestro.git",
-      "governance_rules_ref": "2ca29e4389fb51e3b2143497fec10cc81e29761d",
-      "note": "HAS the branch, but at v5.2.0 \u2014 exactly 245 commits behind the local tip, 0 ahead"
+      "governance_rules_ref": "1ccbe9e0d28a064ed89ba334b28e934143c96689",
+      "note": "HAS the branch. RE-MEASURED 2026-08-08T10:45 after a push: tip moved 2ca29e43 -> 1ccbe9e0, doc v5.2.0 -> v5.3.3, and BOTH vendored blocks are now byte-identical to the fetchable copy. The earlier reading (245 behind, R22 carrying the pre-fix @<owner> byline) was true when taken and is now resolved by ai-maestro#135."
     }
   },
   "blocks": {
@@ -27,8 +27,8 @@
       "sha256": "ed310c8cc5843a40b338962148748a3de12a8c8cf2f36387acc2469fd8a51774",
       "bytes": 2394,
       "words": 380,
-      "identical_on_fork_remote": false,
-      "fork_divergence": "The fetchable fork copy still carries the PRE-FIX R22.2 template with a literal '@<owner>' in it \u2014 the exact form that pages a live account when a byline is copied verbatim. The vendored bytes are the corrected 2026-08-05 text. So for THIS block the canonical text is not merely newer on the remote; the remote's version is the bug."
+      "identical_on_fork_remote": true,
+      "fork_divergence_history": "RESOLVED 2026-08-08. At 2ca29e43 the fetchable copy still carried the pre-fix R22.2 template with a literal '@<owner>' \u2014 the form that pages a live account. Fixed by the push to 1ccbe9e0. Kept as history because it is the measurement that justified vendoring in the first place: the question is which copy you reach, and for a while the reachable one was the bug."
     },
     "R23": {
       "source_path": "docs/GOVERNANCE-RULES.md",

@@ -11,6 +11,8 @@ import re
 from pathlib import Path
 from typing import Any
 
+import pytest
+
 PLUGIN_NAME = "ai-maestro-assistant-role-agent"
 AGENT_NAME = f"{PLUGIN_NAME}-main-agent"
 
@@ -180,6 +182,11 @@ def test_the_word_budget_actually_excludes_canonical_blocks(agent_body: str) -> 
     budget silently counting canonical text again, and the only symptom would
     be a confusing failure months later after an upstream rule grew.
     """
+    if "<!-- CANONICAL-BEGIN:" not in agent_body:
+        pytest.skip(
+            "canonical blocks temporarily withheld from the persona for the v0.3.3 release "
+            "(CPV#201 gate defect, TRDD-NRQK4W2P) — re-arms automatically when they return"
+        )
     authored = _CANONICAL_BLOCK_RE.sub("", agent_body)
     assert len(authored) < len(agent_body), "no canonical block was excluded — marker drift?"
     assert "R23.7" not in authored, "canonical rule rows leaked into the authored count"
