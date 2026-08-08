@@ -184,7 +184,7 @@ jobs:
           # live account (TRDD-3972YVFH is that exact harm, still live in
           # v0.3.2). Plain words identify the author just as well.
           {
-            printf '_Released by the ASSISTANT role-plugin (via the shared repo-owner identity)._\n\n'
+            printf '_Released by the ASSISTANT role-plugin (via the shared owner gh auth)._\n\n'
             cat changelog.txt
           } > changelog.body && mv changelog.body changelog.txt
           echo "changelog_file=changelog.txt" >> "$GITHUB_OUTPUT"

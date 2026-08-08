@@ -4,7 +4,7 @@ title: Restore the vendored canonical R22 and R23 blocks to the persona once CPV
 column: blocked
 pre-block-column: todo
 created: 2026-08-08T10:46:16+0200
-updated: 2026-08-08T10:46:16+0200
+updated: 2026-08-08T12:18:24+0200
 current-owner: ai-maestro-assistant-role-agent
 assignee: ai-maestro-assistant-role-agent
 task-type: docs
@@ -45,9 +45,21 @@ release-via: publish
   flag to remember. A manual re-enable is the kind of thing that stays forgotten for a year, and
   a conformance test that silently never runs is worse than no test, because the suite still
   reports green.
+- **RE-VENDOR FROM THE SPEC, NOT THE DOC — found 2026-08-08T12:05, after this card was written.**
+  ai-maestro#127 Ask 1 ruled `design/specs/governance-spec.md` **authoritative over**
+  `docs/GOVERNANCE-RULES.md` where they differ. The vendored blocks came from the DOC, i.e. the
+  subordinate source. Measured at tip `0e8d6896`: both blocks are still byte-verbatim in the doc,
+  and **neither appears in the spec at all** — the spec states the same rules in a different,
+  more granular form (`R22.1 self-id-every-github-write` … `R22.5 mirrors-PRRD-G1.1`;
+  `R23.1 no-element-calls-api` … `R23.8 announce-to-ship`). So this is not drift between two
+  copies of one text; it is two different renderings, and I pinned the one that loses a conflict.
+  Extents recorded in `tests/fixtures/canonical/PROVENANCE.json` → `authoritative_source_note`.
+- **The branch tip moved three times in one day** (`1ccbe9e0` → `db6cf8f8` → `0e8d6896`), so
+  locate the blocks by HEADING and re-measure; never trust a stored line number as a key.
 - **NEXT ACTION:** when CPV#201 lands (or CPV#198 lands and the gate tolerates a demoted NIT),
-  restore the two `CANONICAL-BEGIN/END` blocks from `tests/fixtures/canonical/`, confirm the
-  4 skipped tests turn into passes, re-validate to exit 0, and ship v0.3.4.
+  re-capture the canonical text **from the spec as primary** (doc second, per Ask 1), restore the
+  `CANONICAL-BEGIN/END` blocks, confirm the 5 skipped tests turn into passes, re-validate to
+  exit 0, and ship v0.3.4.
 
 ## Why this exists rather than "we'll remember"
 
@@ -61,8 +73,9 @@ reader to find out this was deliberate and temporary.
 
 - [ ] CPV#201 fixed (a demoted NIT no longer blocks the release gate), or CPV ships a
       `--fail-on=` control the pipeline can use.
-- [ ] `CANONICAL-BEGIN/END: R22` and `: R23` restored to the persona from the fixtures,
-      byte-for-byte — re-captured from the current upstream ref, not pasted from memory.
+- [ ] `CANONICAL-BEGIN/END: R22` and `: R23` restored to the persona byte-for-byte, re-captured
+      from the current upstream ref — **from `design/specs/governance-spec.md` as the primary
+      source** (ai-maestro#127 Ask 1: the spec outranks the doc), not pasted from memory.
 - [ ] `PROVENANCE.json` re-measured against the then-current fork tip in the same commit
       (it moved twice in one day on 2026-08-08; assume it moved again).
 - [ ] The 5 skipped tests report as PASSED, not skipped — that is the proof the restore landed.

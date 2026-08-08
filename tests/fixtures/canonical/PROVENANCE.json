@@ -5,7 +5,20 @@
   "source_commit": "afba54bbb716748131021d0bd6ce8a048eb8967f",
   "source_version_line": "version: \"5.3.2\"",
   "captured_at": "2026-08-08T00:20:00+0200",
-  "remotes_checked_at": "2026-08-08T10:45:00+0200",
+  "remotes_checked_at": "2026-08-08T12:05:00+0200",
+  "authoritative_source_note": {
+    "_ruling": "ai-maestro#127 Ask 1 (2026-08-07T22:23Z): design/specs/governance-spec.md is AUTHORITATIVE OVER docs/GOVERNANCE-RULES.md where they differ. Cite the spec first, the doc second.",
+    "consequence": "These blocks were vendored from docs/GOVERNANCE-RULES.md — the SUBORDINATE source. Measured 2026-08-08T12:05: both blocks are still byte-verbatim in the doc at tip 0e8d6896, and NEITHER appears verbatim in the spec, because the spec states the same rules in a DIFFERENT and more granular form (numbered sub-rules with slugs: R22.1 self-id-every-github-write .. R22.5 mirrors-PRRD-G1.1; R23.1 no-element-calls-api .. R23.8 announce-to-ship).",
+    "spec_extents_for_the_restore": {
+      "R22": "design/specs/governance-spec.md '### GOV-R22 — GitHub Authorship Self-Identification [USER-set baseline]', lines 1390-1405 at tip 0e8d6896 (1743 chars / 238 words)",
+      "R23": "design/specs/governance-spec.md '### GOV-R23 — Plugin<->Server Decoupling via the Frozen CLI Layer [CRITICAL · IRON]', lines 1406-1436 at tip 0e8d6896 (3218 chars / 445 words)"
+    },
+    "action": "NOT re-vendored now: the persona blocks are withheld pending CPV#201 (TRDD-NRQK4W2P), and that card already requires re-capturing from the then-current ref rather than pasting from memory. Re-capture from the SPEC as primary at restore time. Line numbers above are a starting point, not a key — this branch moved three times in one day (1ccbe9e0 -> db6cf8f8 -> 0e8d6896), so locate by heading, then re-measure."
+  },
+  "tip_observations": [
+    {"at": "2026-08-08T10:45:00+0200", "tip": "1ccbe9e0d28a064ed89ba334b28e934143c96689", "doc_version": "5.3.3"},
+    {"at": "2026-08-08T12:05:00+0200", "tip": "0e8d689657b51202a233f0e5f5dca85c21b33f5e", "doc_version": "5.3.3", "note": "ai-maestro#127 cited db6cf8f8 at 00:23Z as the pushed tip; by 12:05 it was 0e8d6896. Both vendored blocks remain byte-verbatim in the doc across all three tips."}
+  ],
   "remotes": {
     "_why": "A remote-availability claim MUST name the remote. An earlier revision said 'not on the remote at all' after checking only `origin`, which is upstream \u2014 the same defect as citing a sha without naming its repo.",
     "origin": {
