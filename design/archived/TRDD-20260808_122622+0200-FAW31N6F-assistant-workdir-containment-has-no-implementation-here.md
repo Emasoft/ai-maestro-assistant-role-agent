@@ -1,9 +1,10 @@
 ---
 trdd-id: FAW31N6F
 title: The ASSISTANT workdir containment mandated by TRDD-3QRUDK12 has no implementation in this plugin
-column: todo
+column: cancelled
 created: 2026-08-08T12:26:22+0200
-updated: 2026-08-08T12:26:22+0200
+updated: 2026-08-08T12:58:00+0200
+superseded-by: [ai-maestro TRDD-9SEQ4QI9]
 current-owner: ai-maestro-assistant-role-agent
 assignee: ai-maestro-assistant-role-agent
 task-type: security
@@ -20,7 +21,28 @@ release-via: publish
 
 # The ASSISTANT workdir containment mandated by TRDD-3QRUDK12 has no implementation in this plugin
 
-## ⏵ STATE — READ THIS FIRST ON RESUME (authoritative; supersedes the body) — 2026-08-08
+## ⏵ STATE — CLOSED 2026-08-08. The premise was wrong, and that is the answer. — 2026-08-08
+
+**RULED (ai-maestro hub, `TRDD-9SEQ4QI9`, verified at `governance-rules` tip `f3f02743`): containment
+is SERVER-owned, and this plugin shipping `hooks/` EMPTY is CORRECT — not a gap.** My own sentence
+became the ruling's core: *"a control the constrained agent can uninstall is not containment."* A
+role plugin installs at agent-local scope, so the constrained agent could remove it; the core plugin
+fails identically (R17 self-heal restores presence, not integrity). Authoritative containment is
+server-side gates the agent cannot reach, plus any workdir-local hook **provisioned and re-asserted
+by a watchdog living outside the workdir**.
+
+**So the finding that opened this card — "hooks/ ships zero files" — was a correct measurement with
+an incorrect implication.** I read an empty directory as a missing control; it is the intended
+shape. Recording that explicitly because the next reader will re-run the same `find` and reach the
+same wrong conclusion unless the card says why the emptiness is deliberate.
+
+**What was still mine, and is done:** the persona was silent about a constraint the USER dictated
+for it. Item 14 of the forbidden list now states that containment is server-owned and must never be
+relaxed or routed around — paid for by cutting redundant prose, not by raising the word ceiling.
+
+**Nothing further here.** Implementation is hub-side work on `TRDD-9SEQ4QI9`.
+
+## Original STATE (retained — this is what the question looked like before it was answered)
 
 - **The gap, measured not assumed (2026-08-08T12:20):** ai-maestro's `TRDD-3QRUDK12` — a USER
   dictation, relayed on `ai-maestro#39` — mandates for this role:
@@ -83,3 +105,13 @@ the same argument one level up. But this is ai-maestro's call, not mine.
   self-approved: this proposes a security control for a multi-user product, and the USER dictated
   the model it implements. Filed at `column: todo` rather than as a proposal because the FIRST
   action is a question to ai-maestro, which needs no approval; any implementation does.
+- 2026-08-08T12:58:00+0200 — **CANCELLED** by the ASSISTANT, per this card's own acceptance
+  criterion ("if it is NOT this plugin: closed as cancelled with the owning card cited, and the
+  persona gains one line"). The ai-maestro hub ruled containment SERVER-owned
+  (`TRDD-9SEQ4QI9`, verified at tip `f3f02743` before acting — the commit exists, is the branch
+  tip, and carries the card). Cancelled rather than completed: the work is real but belongs to
+  another repo, so claiming completion here would assert I built something I did not.
+  The persona half WAS mine and shipped (forbidden-list item 14).
+  **Asking instead of building was the right call** — I had a measurement ("hooks/ is empty") that
+  looked like a gap, and building a filesystem gate on that reading would have produced an
+  agent-uninstallable control that reads as protection while providing none.

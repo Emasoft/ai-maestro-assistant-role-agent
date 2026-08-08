@@ -13,7 +13,15 @@
       "R22": "design/specs/governance-spec.md '### GOV-R22 — GitHub Authorship Self-Identification [USER-set baseline]', lines 1390-1405 at tip 0e8d6896 (1743 chars / 238 words)",
       "R23": "design/specs/governance-spec.md '### GOV-R23 — Plugin<->Server Decoupling via the Frozen CLI Layer [CRITICAL · IRON]', lines 1406-1436 at tip 0e8d6896 (3218 chars / 445 words)"
     },
-    "action": "NOT re-vendored now: the persona blocks are withheld pending CPV#201 (TRDD-NRQK4W2P), and that card already requires re-capturing from the then-current ref rather than pasting from memory. Re-capture from the SPEC as primary at restore time. Line numbers above are a starting point, not a key — this branch moved three times in one day (1ccbe9e0 -> db6cf8f8 -> 0e8d6896), so locate by heading, then re-measure."
+    "action": "SUPERSEDED 2026-08-08T13:00 by the hub ruling below. The earlier text here said to 'Re-capture from the SPEC as primary at restore time'. That is NOT the ruling. Kept verbatim rather than deleted because it was the honest reading of Ask 1 before the hub ruled, and a record that silently swaps its own conclusion teaches nothing.",
+    "hub_ruling_2026_08_08": {
+      "_source": "ai-maestro hub, relayed cross-session and VERIFIED against Emasoft/ai-maestro@governance-rules tip f3f02743 (design/tasks/TRDD-...-9SEQ4QI9-...md). Citations were checked before acting: the commit exists, IS the branch tip, and the card is present.",
+      "ruling": "The SPEC's granular renderings (R22.1..R22.5 / R23.1..R23.8) are the NORMATIVE form. The DOC's verbatim blocks — what is vendored here — are PROVENANCE: the source being rendered. Coexistence is fine, so these fixtures do NOT need re-capturing from the spec.",
+      "condition": "Coexistence is fine ONLY IF the normative declaration is stated WHERE THE CLAUSES LIVE. So the restore must carry, next to the blocks, an explicit line saying the spec's granular form is normative and this doc text is the provenance copy — otherwise a reader takes the vendored prose as the rule.",
+      "consequence_for_this_file": "These fixtures stay as they are. Their sha256 pins and the doc line ranges remain the right thing to verify against. The spec extents recorded above are retained as a cross-reference, not as a re-vendoring target.",
+      "fleet_note": "A fleet check is warranted — every plugin that vendored the doc pinned provenance rather than the normative form — and each repo does its own Tier-0 pass. This repo's pass is this entry."
+    },
+    "line_number_caution": "Line numbers above are a starting point, never a key — this branch moved four times in one day (1ccbe9e0 -> db6cf8f8 -> 0e8d6896 -> f3f02743). Locate by heading, then re-measure."
   },
   "tip_observations": [
     {"at": "2026-08-08T10:45:00+0200", "tip": "1ccbe9e0d28a064ed89ba334b28e934143c96689", "doc_version": "5.3.3"},

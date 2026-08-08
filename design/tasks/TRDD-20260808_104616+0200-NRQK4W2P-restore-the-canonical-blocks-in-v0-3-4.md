@@ -4,7 +4,7 @@ title: Restore the vendored canonical R22 and R23 blocks to the persona once CPV
 column: blocked
 pre-block-column: todo
 created: 2026-08-08T10:46:16+0200
-updated: 2026-08-08T12:18:24+0200
+updated: 2026-08-08T12:53:51+0200
 current-owner: ai-maestro-assistant-role-agent
 assignee: ai-maestro-assistant-role-agent
 task-type: docs
@@ -45,7 +45,17 @@ release-via: publish
   flag to remember. A manual re-enable is the kind of thing that stays forgotten for a year, and
   a conformance test that silently never runs is worse than no test, because the suite still
   reports green.
-- **RE-VENDOR FROM THE SPEC, NOT THE DOC — found 2026-08-08T12:05, after this card was written.**
+- **⚠️ SUPERSEDED — DO NOT RE-VENDOR FROM THE SPEC. Ruled by the hub 2026-08-08T13:00.** The bullet
+  below was my reading of Ask 1 before the hub ruled, and it is kept because it is the measurement
+  that produced the question, not because it is the instruction. **The ruling:** the spec's granular
+  renderings (`R22.1`…`R22.5` / `R23.1`…`R23.8`) are the **NORMATIVE** form; the doc's verbatim
+  blocks — what is vendored here — are **PROVENANCE**, the source being rendered. Coexistence is
+  fine, so the fixtures stay as captured. **The one condition:** the normative declaration must be
+  stated WHERE THE CLAUSES LIVE — so the restored persona blocks must carry, adjacent to them, an
+  explicit line saying the spec's granular form is normative and this is the provenance copy.
+  Without that line a reader takes the vendored prose as the rule. Verified against
+  `Emasoft/ai-maestro@governance-rules` tip `f3f02743`, card `TRDD-9SEQ4QI9`.
+- **(superseded reading, retained) RE-VENDOR FROM THE SPEC, NOT THE DOC — found 2026-08-08T12:05.**
   ai-maestro#127 Ask 1 ruled `design/specs/governance-spec.md` **authoritative over**
   `docs/GOVERNANCE-RULES.md` where they differ. The vendored blocks came from the DOC, i.e. the
   subordinate source. Measured at tip `0e8d6896`: both blocks are still byte-verbatim in the doc,
@@ -76,8 +86,11 @@ reader to find out this was deliberate and temporary.
 - [ ] CPV#201 fixed (a demoted NIT no longer blocks the release gate), or CPV ships a
       `--fail-on=` control the pipeline can use.
 - [ ] `CANONICAL-BEGIN/END: R22` and `: R23` restored to the persona byte-for-byte, re-captured
-      from the current upstream ref — **from `design/specs/governance-spec.md` as the primary
-      source** (ai-maestro#127 Ask 1: the spec outranks the doc), not pasted from memory.
+      from `docs/GOVERNANCE-RULES.md` at the then-current upstream ref, not pasted from memory.
+- [ ] **A line adjacent to the restored blocks declares the spec's granular renderings
+      (`R22.1`…`R22.5` / `R23.1`…`R23.8`) NORMATIVE and these blocks PROVENANCE** — the hub's
+      explicit condition for letting the two coexist (`TRDD-9SEQ4QI9`). Without it the vendored
+      prose reads as the rule.
 - [ ] `PROVENANCE.json` re-measured against the then-current fork tip in the same commit
       (it moved twice in one day on 2026-08-08; assume it moved again).
 - [ ] The 5 skipped tests report as PASSED, not skipped — that is the proof the restore landed.
