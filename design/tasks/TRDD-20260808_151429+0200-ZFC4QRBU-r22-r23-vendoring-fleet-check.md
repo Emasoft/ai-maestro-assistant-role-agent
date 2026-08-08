@@ -3,7 +3,7 @@ trdd-id: ZFC4QRBU
 title: Fleet check — which role-plugins vendored R22 and R23 without declaring the spec normative
 column: complete
 created: 2026-08-08T15:14:29+0200
-updated: 2026-08-08T15:22:00+0200
+updated: 2026-08-08T15:25:09+0200
 current-owner: ai-maestro-assistant-role-agent
 assignee: ai-maestro-assistant-role-agent
 task-type: audit
@@ -81,7 +81,12 @@ Report: `reports/r22-r23-fleet-check/20260808_152001+0200-r22-r23-vendoring-and-
 
 ## Acceptance criteria
 
-- [x] Population stated explicitly, including the unreachable member (`webdesign-agent`, 404).
+- [x] Population stated explicitly. **10/10 measured — no unreachable rows.** My first pass called
+      `ai-maestro-webdesign-agent` unreachable (404); the hub supplied the real name
+      (`ai-maestro-webdesign`, no `-agent` suffix) and it measured clean (`c43af898c530`,
+      1,321 files, `no-vendoring`). The lesson is that **"unreachable" and "I guessed the repo
+      name wrong" look identical from outside**, and only one of them is a real gap — so a 404 in
+      an audit population is a prompt to check the name, not a row to write off.
 - [x] Every repo measured, all-clean rows listed (a clean row omitted is a row nobody can audit).
 - [x] Method validated: 6/6 needles positive-controlled against the canonical doc, plus a
       false-negative citation sweep — a null across 8 repos is otherwise indistinguishable from
