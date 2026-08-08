@@ -1,6 +1,6 @@
 {
   "name": "ai-maestro-assistant-role-agent",
-  "version": "0.3.3",
+  "version": "0.3.4",
   "description": "Role-plugin for ASSISTANT-titled agents in the AI Maestro ecosystem (R39). Each human user (except the MAESTRO) gets exactly one ASSISTANT: it can plan like a MANAGER and program like an AUTONOMOUS agent, but it MUST NOT create agents or teams and has NO governing powers. It serves exactly one user (label 'Assistant of <user>'), obeys ONLY that user (not even the MAESTRO), approves only its OWN TRDDs, has no team, and is invisible to every agent except the MANAGER \u2014 which may assign it a refusable task only if the user enabled MANAGER-collaboration (R39.8/R39.9). On a shared GitHub project it acts as a peer with equal authority; when the MANAGER assigns a collaborator there (and the user permits), a scoped, user-revocable channel to that collaborator opens (R39.10). It inherits its user's kanban tasks and granted permissions. Requires AI Maestro for messaging/identity skills.",
   "author": {
     "name": "Emasoft",
