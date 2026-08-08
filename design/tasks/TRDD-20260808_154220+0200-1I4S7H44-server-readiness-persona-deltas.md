@@ -89,8 +89,13 @@ promise to a number nobody controls the timing of.**
 
 - [x] D2 shipped: the persona forbids uninstalling its own role plugin / required core plugins.
 - [x] D3 shipped: interim note names the condition, not a version.
-- [ ] D1 resolved by the hub, then reflected in the persona (or explicitly recorded as
-      "persona is correct, 3QRUDK12's clause is about obedience not initiation").
+- [x] D1 RULED by the hub 2026-08-08: **my reconciliation was correct — the CHANNEL is always
+      open, OBEDIENCE is separately gated.** The persona was WRONG as written; all three
+      "you initiate no contact" sites now say "no contact with any agent OTHER than the MANAGER",
+      and the MANAGER-channel section gained an explicit right to speak first. The dead-man
+      argument was adopted into the ruling's rationale verbatim: *a title that cannot say "I am
+      blocked" to the only agent able to act is mis-specified, not safe.* This also closes the
+      issue #1 Ask 2 question by the same sentence.
 - [ ] Released.
 
 ## Approval log
