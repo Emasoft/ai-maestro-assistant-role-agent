@@ -1,9 +1,10 @@
 ---
 trdd-id: 1I4S7H44
 title: Server-readiness — persona deltas against the USER-dictated ASSISTANT model
-column: dev
+column: complete
 created: 2026-08-08T15:42:20+0200
-updated: 2026-08-08T15:42:20+0200
+updated: 2026-08-11T14:07:09+0200
+implementation-commits: [bc253d4, 1807231]
 current-owner: ai-maestro-assistant-role-agent
 assignee: ai-maestro-assistant-role-agent
 task-type: feature
@@ -96,7 +97,10 @@ promise to a number nobody controls the timing of.**
       argument was adopted into the ruling's rationale verbatim: *a title that cannot say "I am
       blocked" to the only agent able to act is mis-specified, not safe.* This also closes the
       issue #1 Ask 2 question by the same sentence.
-- [ ] Released.
+- [x] Released in **v0.3.6** (2026-08-08), commits `bc253d4` + `1807231`. Card left open by
+      oversight for three days after shipping; closed on the janitor's `[trdd-reminder]`. An
+      unclosed complete card is indistinguishable from an abandoned one, which is the whole
+      reason that reminder exists.
 
 ## Approval log
 
