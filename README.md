@@ -94,9 +94,18 @@ truth; this table is the summary an installer needs.
 
 **Whom it obeys:** its user **unconditionally**; the MANAGER **only** with the
 user's explicit permission, and even then every task is **refusable** (R39.5 /
-R39.9 / R41). Not the MAESTRO user, not any other agent. The comm-graph is
-enforced **server-side** (HTTP 403 on a forbidden send) — the persona defers to
-the `agent-messaging` skill as the authoritative, always-current source.
+R39.9 / R41). Not the MAESTRO user, not any other agent.
+
+**Two transports, and only one of them is policed.** AMP goes through the AI
+Maestro server, which checks every send against the comm-graph and returns HTTP
+403 on a forbidden one. Claude Code's own cross-session channel does not:
+`SendMessage` to a live session, `ListAgents` to enumerate them (including
+sessions on **other machines** and in the cloud), and a `@name` mention typed in
+the prompt all bypass the server entirely, so **no 403 is possible there** and
+the comm-graph is unenforced — the limit is the persona's alone to hold. Inbound
+messages are governed only by the user's `crossSessionInbound` setting. The
+persona states all of this in full; it is duplicated here deliberately, not
+delegated (ai-maestro#107).
 
 ## Development
 

@@ -207,30 +207,18 @@ def test_forbidden_list_is_intact(agent_body: str) -> None:
     )
 
 
-def test_agent_body_covers_the_unpoliced_cross_session_channel(agent_body: str) -> None:
-    """The persona names the client's direct session-to-session channel.
+def test_agent_body_names_listagents_as_the_enumeration_surface(agent_body: str) -> None:
+    """The persona names `ListAgents`, whose output is not a licence to contact.
 
-    AMP is validated server-side, so the persona could once say "a forbidden
-    send returns HTTP 403" and be complete. Claude Code 2.1.224 shipped a
-    SECOND transport — SendMessage between live sessions, with ListAgents to
-    enumerate them — that never reaches the AI Maestro server. No 403 is
-    possible on it, so R39.5/R39.7/R39.9 are unenforced there and the limit is
-    the persona's alone to hold. A body that documents only the policed
-    transport reads as though every send is checked, which is the more
-    dangerous of the two errors.
-
-    Naming the tools is asserted separately from the not-policed claim on
-    purpose: a body that merely mentioned them in passing would satisfy a
-    keyword scan while still implying the server has it covered.
+    The 403-promise-needs-its-exception guard now runs corpus-wide in
+    tests/test_transport_claims.py — persona-scoped was exactly the
+    mis-measurement that let README.md keep a bare 403 claim for three releases
+    (ai-maestro#143). What stays here is the one fact specific to this body:
+    the persona must still name the enumeration tool, because an agent that
+    never hears of `ListAgents` cannot be told that seeing a session is not
+    permission to message it (R39.7).
     """
-    lowered = agent_body.lower()
-    for tool in ("sendmessage", "listagents"):
-        assert tool in lowered, (
-            f"persona never names `{tool}` — the unpoliced cross-session transport "
-            "is invisible to an agent that only reads this file"
-        )
-    assert re.search(r"(?:bypasses|never reaches|does not reach)[^.]{0,80}server", lowered), (
-        "persona names the cross-session channel but no longer states that it "
-        "bypasses the AI Maestro server; without that, the 403 promise above it "
-        "reads as covering every send"
+    assert "listagents" in agent_body.lower(), (
+        "persona never names `ListAgents` — an agent reading only this file "
+        "cannot know that enumerating a session is not a licence to contact it"
     )
