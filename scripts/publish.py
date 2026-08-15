@@ -75,6 +75,7 @@ import shutil
 import stat
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 # Load gh / git retry wrappers from the sibling module so every push +
@@ -1801,13 +1802,22 @@ def detect_bump_type(root: Path) -> str:
 def stage_changelog(root: Path, new_ver: str, dry_run: bool) -> None:
     """Step 9: Generate CHANGELOG.md with git-cliff using the bumped tag.
 
-    Uses the git-cliff pattern recommended for release pipelines:
-        git cliff --bump --unreleased --tag v<NEXT> -o CHANGELOG.md
+        git cliff --bump --tag v<NEXT> -o CHANGELOG.md
 
     --bump          promote the unreleased section into a dated tag entry
-    --unreleased    process only commits since the last tag
     --tag v<NEXT>   label the new entry with the computed version (prefixed v)
     -o CHANGELOG.md write the regenerated changelog back to disk
+
+    `--unreleased` was DELIBERATELY REMOVED (CPV#204, fixed in canon v5.3.0).
+    With `--unreleased`, git-cliff renders ONLY the since-last-tag section and
+    `-o` then OVERWRITES the whole file with it — every prior release section
+    is silently deleted at exit 0. That destroyed this repo's history on
+    v0.3.4, v0.3.5 AND v0.3.6 (recovered from tags each time). Without it,
+    git-cliff renders EVERY tag from the commit log, which is also idempotent:
+    re-running the step for the same version reproduces the file byte for
+    byte, so an interrupted publish cannot duplicate a section. Do not
+    "restore" the flag because git-cliff docs pair it with `--bump` — that
+    documented-looking pairing is exactly how the bug survived review 3 times.
     """
     cprint(f"\n{BOLD}[9/11] Generating changelog (git-cliff)...{NC}")
     if not shutil.which("git-cliff"):
@@ -1819,12 +1829,28 @@ def stage_changelog(root: Path, new_ver: str, dry_run: bool) -> None:
         return
     tag = f"v{new_ver}"
     if dry_run:
-        cprint(f"  Would run: git-cliff --bump --unreleased --tag {tag} -o CHANGELOG.md")
+        cprint(f"  Would run: git-cliff --bump --tag {tag} -o CHANGELOG.md")
         return
     run(
-        ["git-cliff", "--bump", "--unreleased", "--tag", tag, "-o", "CHANGELOG.md"],
+        ["git-cliff", "--bump", "--tag", tag, "-o", "CHANGELOG.md"],
         cwd=root,
     )
+    # Post-condition guard (CPV#204 follow-up): the full-render command above
+    # makes history loss structurally impossible, but a future edit could
+    # drift the command back — so fail loudly if the section count ever drops
+    # below the number of existing tags (each tag owns one `## [x.y.z]` line).
+    changelog = root / "CHANGELOG.md"
+    if changelog.is_file():
+        section_count = sum(1 for line in changelog.read_text(encoding="utf-8").splitlines() if line.startswith("## ["))
+        tag_list = run(["git", "tag", "--list", "v[0-9]*"], cwd=root, capture=True)
+        tag_count = len(tag_list.stdout.strip().splitlines())
+        if section_count <= tag_count and tag_count > 0:
+            cprint(
+                f"  {RED}CHANGELOG.md has {section_count} sections for {tag_count} "
+                f"existing tags + 1 new — git-cliff ate the history again "
+                f"(CPV#204 shape). Aborting BEFORE commit/tag/push.{NC}"
+            )
+            sys.exit(1)
     cprint(f"  {GREEN}CHANGELOG.md updated with {tag}.{NC}")
 
 
@@ -1944,15 +1970,45 @@ def stage_gh_release(root: Path, new_ver: str, dry_run: bool) -> None:
         return
     owner, repo = _resolve_owner_repo(root)
     _ensure_gh_auth(owner, repo)
-    changelog_file = root / "CHANGELOG.md"
-    # Use --notes-file when CHANGELOG exists (the git-cliff structured
-    # release notes are the right thing to ship). Fall back to
-    # --generate-notes only when no CHANGELOG is present. Passing both
-    # flags simultaneously produces undefined behavior across gh versions
-    # (some concatenate, some override) — never both.
+    # Release notes = THIS version's section only, never the whole
+    # CHANGELOG.md (CPV#205). Passing the full file as --notes-file ships the
+    # entire history as one release's body; CPV measured 110,166 chars against
+    # GitHub's 125,000-char release-body limit — a few releases from
+    # `gh release create` failing outright AFTER the tag is already public.
+    # `--current` renders only the section of the tag at HEAD; its
+    # precondition (HEAD is tagged) is guaranteed here because step 10 tags
+    # HEAD before this stage runs. The notes file lives OUTSIDE the repo root
+    # so it can never dirty the tree mid-release. Empty/failed render falls
+    # back to --generate-notes — never both flags at once (undefined behavior
+    # across gh versions: some concatenate, some override).
+    notes_file = Path(tempfile.gettempdir()) / f"release-notes-{repo}-{tag}.md"
+    notes_ok = False
+    if shutil.which("git-cliff") and (root / "cliff.toml").is_file():
+        cliff = run(
+            ["git-cliff", "--current", "--strip", "all", "-o", str(notes_file)],
+            cwd=root,
+            check=False,
+            capture=True,
+        )
+        notes_ok = (
+            cliff.returncode == 0 and notes_file.is_file() and notes_file.read_text(encoding="utf-8").strip() != ""
+        )
+        if not notes_ok:
+            cprint(f"  {YELLOW}git-cliff --current produced no notes — falling back to --generate-notes.{NC}")
+        else:
+            # G1.1 / R22: every GitHub-writing surface leads with who authored
+            # it, and a release body is one. `--strip all` removes cliff.toml's
+            # changelog HEADER — which is where the byline lives — so re-prepend
+            # it here, guarded for idempotency exactly like release.yml's step
+            # (same grep-fixed-string collocation). Without this, a CI failure
+            # after publish would leave a byline-less body live indefinitely.
+            byline = "_Released by the ASSISTANT role-plugin (via the shared owner gh auth)._"
+            notes_text = notes_file.read_text(encoding="utf-8")
+            if "_Released by the ASSISTANT role-plugin" not in notes_text:
+                notes_file.write_text(f"{byline}\n\n{notes_text}", encoding="utf-8")
     args = ["gh", "release", "create", tag, "--title", tag]
-    if changelog_file.is_file():
-        args.extend(["--notes-file", str(changelog_file)])
+    if notes_ok:
+        args.extend(["--notes-file", str(notes_file)])
     else:
         args.append("--generate-notes")
     cprint(f"  {BLUE}$ {' '.join(args)}{NC}")
