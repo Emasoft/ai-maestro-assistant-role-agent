@@ -4,6 +4,22 @@ _Released by the ASSISTANT role-plugin (via the shared owner gh auth)._
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.7] — 2026-08-15
+
+### Bug Fixes
+
+- Restore changelog history deleted by publish.py again (CPV#204, third occurrence) (66ef896)
+- **docs:** Align transport claims with Claude Code 2.1.222-2.1.232 (bc1435e)
+- **publish:** Stop changelog history loss and full-history release bodies (CPV#204, CPV#205) (0208c63)
+
+### Documentation
+
+- TRDD-1I4S7H44 -> complete; it shipped in v0.3.6 and sat open for three days (b65f6ef)
+- Archive TRDD-3W9HE416 (GHCFG-001) — withdrawn by the janitor (352dee1)
+
+### Styling
+
+- Ruff-format publish.py (mechanical, zero behavior change) (98dc59c)
 ## [0.3.6] — 2026-08-08
 
 ### Bug Fixes
