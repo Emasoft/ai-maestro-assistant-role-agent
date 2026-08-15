@@ -1975,17 +1975,29 @@ def stage_gh_release(root: Path, new_ver: str, dry_run: bool) -> None:
     # entire history as one release's body; CPV measured 110,166 chars against
     # GitHub's 125,000-char release-body limit — a few releases from
     # `gh release create` failing outright AFTER the tag is already public.
-    # `--current` renders only the section of the tag at HEAD; its
-    # precondition (HEAD is tagged) is guaranteed here because step 10 tags
-    # HEAD before this stage runs. The notes file lives OUTSIDE the repo root
-    # so it can never dirty the tree mid-release. Empty/failed render falls
-    # back to --generate-notes — never both flags at once (undefined behavior
-    # across gh versions: some concatenate, some override).
+    # The section is rendered from the explicit range <prev>..<tag>, NOT
+    # `git-cliff --current`: measured on the v0.3.7 publish, --current errors
+    # "No tag exists for the current commit" when HEAD carries two tags (the
+    # release tag plus the `<plugin>--vX.Y.Z` dependency-resolution tag, which
+    # does not match cliff.toml's tag_pattern), while the explicit range
+    # renders exactly one section. prev is resolved with --match 'v[0-9]*' so
+    # the dep tag can never be picked as the range base. The notes file lives
+    # OUTSIDE the repo root so it can never dirty the tree mid-release.
+    # Empty/failed render falls back to --generate-notes — never both flags at
+    # once (undefined behavior across gh versions: some concatenate, some
+    # override).
     notes_file = Path(tempfile.gettempdir()) / f"release-notes-{repo}-{tag}.md"
     notes_ok = False
-    if shutil.which("git-cliff") and (root / "cliff.toml").is_file():
+    prev = run(
+        ["git", "describe", "--tags", "--abbrev=0", "--match", "v[0-9]*", f"{tag}^"],
+        cwd=root,
+        check=False,
+        capture=True,
+    )
+    prev_tag = prev.stdout.strip() if prev.returncode == 0 else ""
+    if prev_tag and shutil.which("git-cliff") and (root / "cliff.toml").is_file():
         cliff = run(
-            ["git-cliff", "--current", "--strip", "all", "-o", str(notes_file)],
+            ["git-cliff", f"{prev_tag}..{tag}", "--strip", "all", "-o", str(notes_file)],
             cwd=root,
             check=False,
             capture=True,
@@ -1994,7 +2006,7 @@ def stage_gh_release(root: Path, new_ver: str, dry_run: bool) -> None:
             cliff.returncode == 0 and notes_file.is_file() and notes_file.read_text(encoding="utf-8").strip() != ""
         )
         if not notes_ok:
-            cprint(f"  {YELLOW}git-cliff --current produced no notes — falling back to --generate-notes.{NC}")
+            cprint(f"  {YELLOW}git-cliff {prev_tag}..{tag} produced no notes — falling back to --generate-notes.{NC}")
         else:
             # G1.1 / R22: every GitHub-writing surface leads with who authored
             # it, and a release body is one. `--strip all` removes cliff.toml's
