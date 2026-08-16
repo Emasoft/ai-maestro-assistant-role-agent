@@ -20,6 +20,7 @@ blocked-by: []
 relevant-rules: []
 external-refs: [ai-maestro#127, claude-plugins-validation#198, claude-plugins-validation#201]
 release-via: publish
+implementation-commits: [6be9eaf]
 ---
 
 # Restore the vendored canonical R22 and R23 blocks to the persona once CPV 201 is fixed
