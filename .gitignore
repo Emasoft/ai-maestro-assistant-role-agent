@@ -16,8 +16,32 @@ tests_dev/
 # so committing it would republish content someone deliberately removed.
 .trashcan/
 
-# Claude Code per-session cache / local state
-.claude/
+# Claude Code per-session cache / local state.
+#
+# Written as `.claude/*` and not `.claude/`, because git cannot re-include a
+# path whose PARENT DIRECTORY is excluded — it never descends into an ignored
+# directory, so a later `!` line for a file inside it is dead text. Excluding
+# the CONTENTS instead keeps the directory itself walkable, which is what makes
+# the exception below actually take effect.
+.claude/*
+
+# The one exception: PROJECT-scope memory is the SHARED half of the memory
+# system — machine-agnostic project knowledge meant to be tracked and pushed to
+# every clone. Ignoring it silently excludes the shared scope from the repo, so
+# knowledge written there reaches nobody. Each level is re-excluded immediately
+# after being un-ignored so the hole stays exactly one subtree wide: everything
+# else under .claude/ (session caches, telemetry) stays local state.
+#
+# Machine-private facts — paths, hostnames, accounts, install state — belong in
+# the LOCAL scope (~/.claude/projects/<slug>/memory/), outside this repo, and
+# must never be written here: this subtree is PUSHED.
+!.claude/project/
+.claude/project/*
+!.claude/project/memory/
+
+# ...but not the janitor's scope-leak advisory: it is regenerated on every scan
+# and describes THIS machine's state, not project knowledge.
+.claude/project/memory/memory-scope-leak-proposed.md
 
 # Editor temp and swap files
 *.swp
