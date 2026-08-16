@@ -1,10 +1,9 @@
 ---
 trdd-id: NRQK4W2P
 title: Restore the vendored canonical R22 and R23 blocks to the persona once CPV 201 is fixed
-column: blocked
-pre-block-column: todo
+column: dev
 created: 2026-08-08T10:46:16+0200
-updated: 2026-08-08T12:53:51+0200
+updated: 2026-08-16T16:17:36+0200
 current-owner: ai-maestro-assistant-role-agent
 assignee: ai-maestro-assistant-role-agent
 task-type: docs
@@ -17,7 +16,7 @@ derived: true
 derived-kind: eht
 parent-trdd: 4983GIZW
 severity: medium
-blocked-by: [claude-plugins-validation#201]
+blocked-by: []
 relevant-rules: []
 external-refs: [ai-maestro#127, claude-plugins-validation#198, claude-plugins-validation#201]
 release-via: publish
@@ -25,7 +24,16 @@ release-via: publish
 
 # Restore the vendored canonical R22 and R23 blocks to the persona once CPV 201 is fixed
 
-## ⏵ STATE — READ THIS FIRST ON RESUME (authoritative; supersedes the body) — 2026-08-08
+## ⏵ STATE — READ THIS FIRST ON RESUME (authoritative; supersedes the body) — 2026-08-16
+
+- **UNBLOCKED 2026-08-16.** CPV#201 is CLOSED (`closedAt` 2026-08-15T14:41:20Z, verified
+  first-hand via `gh issue view 201 --repo Emasoft/claude-plugins-validation`). CPV#198/#204/#205
+  also closed. `blocked-by` cleared, column `blocked` → `dev`.
+- **A CLOSED ISSUE IS NOT A PASSING GATE.** #201 closed says the maintainer considers it fixed;
+  it does not say the CPV version this repo pins ships that fix. So the FIRST step of the restore
+  is empirical: restore the blocks, run the real validator, and read its exit code. If it still
+  exits non-zero on the byline NIT, STOP and re-block — do not weaken the canonical text to pass
+  (that is Option 3, rejected 2026-08-08 and still rejected).
 
 - **The canonical blocks were REMOVED FROM THE PERSONA for the v0.3.3 release only, and this
   card is the promise to put them back.** They are mandated by ai-maestro#127 Ask 3/4; nothing
