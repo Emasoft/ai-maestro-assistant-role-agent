@@ -650,7 +650,7 @@ def install_branch_rules(root: Path) -> int:
             [
                 "uvx",
                 "--from",
-                "git+https://github.com/Emasoft/claude-plugins-validation@v3.1.0",
+                "git+https://github.com/Emasoft/claude-plugins-validation@v5.5.0",
                 "--with",
                 "pyyaml",
                 "cpv-setup-branch-rules",
@@ -930,7 +930,7 @@ def run_gate(root: Path) -> int:
         [
             "uvx",
             "--from",
-            "git+https://github.com/Emasoft/claude-plugins-validation@v3.1.0",
+            "git+https://github.com/Emasoft/claude-plugins-validation@v5.5.0",
             "--with",
             "pyyaml",
             "cpv-remote-validate",
@@ -1175,7 +1175,7 @@ def stage_validate(root: Path) -> None:
 
     Cornerstone rule: a plugin cannot be pushed unless validation passes
     with 0 issues (WARNING allowed). The validator is ALWAYS fetched from
-    GitHub (git+https://github.com/Emasoft/claude-plugins-validation@v3.1.0) via
+    GitHub (git+https://github.com/Emasoft/claude-plugins-validation@v5.5.0) via
     uvx so a local tampered copy cannot weaken the rules. No exceptions.
 
     Order: runs AFTER lint + tests so behavioral regressions fail fast
@@ -1192,7 +1192,7 @@ def stage_validate(root: Path) -> None:
         [
             "uvx",
             "--from",
-            "git+https://github.com/Emasoft/claude-plugins-validation@v3.1.0",
+            "git+https://github.com/Emasoft/claude-plugins-validation@v5.5.0",
             "--with",
             "pyyaml",
             "cpv-remote-validate",
@@ -1235,7 +1235,7 @@ def stage_ci_preflight(root: Path) -> None:
         [
             "uvx",
             "--from",
-            "git+https://github.com/Emasoft/claude-plugins-validation@v3.1.0",
+            "git+https://github.com/Emasoft/claude-plugins-validation@v5.5.0",
             "--with",
             "pyyaml",
             "cpv-remote-validate",

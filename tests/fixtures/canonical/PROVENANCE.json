@@ -2,10 +2,10 @@
   "_comment": "Provenance for the byte-for-byte canonical rule copies (TRDD-4983GIZW, ai-maestro#127 Ask 3/4). Regenerate by re-extracting the line ranges below and re-hashing.",
   "source_repo": "Emasoft/ai-maestro",
   "source_branch": "governance-rules",
-  "source_commit": "afba54bbb716748131021d0bd6ce8a048eb8967f",
-  "source_version_line": "version: \"5.3.2\"",
-  "captured_at": "2026-08-08T00:20:00+0200",
-  "remotes_checked_at": "2026-08-08T12:05:00+0200",
+  "source_commit": "2ae3e38d34cb1adf6693dc132f7e597bb750aee8",
+  "source_version_line": "version: \"5.3.3\"",
+  "captured_at": "2026-08-16T16:27:00+0200",
+  "remotes_checked_at": "2026-08-16T16:27:00+0200",
   "authoritative_source_note": {
     "_ruling": "ai-maestro#127 Ask 1 (2026-08-07T22:23Z): design/specs/governance-spec.md is AUTHORITATIVE OVER docs/GOVERNANCE-RULES.md where they differ. Cite the spec first, the doc second.",
     "consequence": "These blocks were vendored from docs/GOVERNANCE-RULES.md — the SUBORDINATE source. Measured 2026-08-08T12:05: both blocks are still byte-verbatim in the doc at tip 0e8d6896, and NEITHER appears verbatim in the spec, because the spec states the same rules in a DIFFERENT and more granular form (numbered sub-rules with slugs: R22.1 self-id-every-github-write .. R22.5 mirrors-PRRD-G1.1; R23.1 no-element-calls-api .. R23.8 announce-to-ship).",
@@ -25,7 +25,8 @@
   },
   "tip_observations": [
     {"at": "2026-08-08T10:45:00+0200", "tip": "1ccbe9e0d28a064ed89ba334b28e934143c96689", "doc_version": "5.3.3"},
-    {"at": "2026-08-08T12:05:00+0200", "tip": "0e8d689657b51202a233f0e5f5dca85c21b33f5e", "doc_version": "5.3.3", "note": "ai-maestro#127 cited db6cf8f8 at 00:23Z as the pushed tip; by 12:05 it was 0e8d6896. Both vendored blocks remain byte-verbatim in the doc across all three tips."}
+    {"at": "2026-08-08T12:05:00+0200", "tip": "0e8d689657b51202a233f0e5f5dca85c21b33f5e", "doc_version": "5.3.3", "note": "ai-maestro#127 cited db6cf8f8 at 00:23Z as the pushed tip; by 12:05 it was 0e8d6896. Both vendored blocks remain byte-verbatim in the doc across all three tips."},
+    {"at": "2026-08-16T16:27:00+0200", "tip": "2ae3e38d34cb1adf6693dc132f7e597bb750aee8", "doc_version": "5.3.3", "note": "TRDD-NRQK4W2P restore re-measurement, 8 days after the last observation. Both vendored blocks remain byte-verbatim in the doc; only the surrounding line numbers shifted by one (1191-1201 -> 1192-1202 for R22, 1207-1220 -> 1208-1221 for R23)."}
   ],
   "remotes": {
     "_why": "A remote-availability claim MUST name the remote. An earlier revision said 'not on the remote at all' after checking only `origin`, which is upstream \u2014 the same defect as citing a sha without naming its repo.",
@@ -36,14 +37,14 @@
     },
     "fork": {
       "url": "https://github.com/Emasoft/ai-maestro.git",
-      "governance_rules_ref": "1ccbe9e0d28a064ed89ba334b28e934143c96689",
-      "note": "HAS the branch. RE-MEASURED 2026-08-08T10:45 after a push: tip moved 2ca29e43 -> 1ccbe9e0, doc v5.2.0 -> v5.3.3, and BOTH vendored blocks are now byte-identical to the fetchable copy. The earlier reading (245 behind, R22 carrying the pre-fix @<owner> byline) was true when taken and is now resolved by ai-maestro#135."
+      "governance_rules_ref": "2ae3e38d34cb1adf6693dc132f7e597bb750aee8",
+      "note": "HAS the branch. RE-MEASURED 2026-08-16T16:27 for the TRDD-NRQK4W2P restore: tip moved 0e8d6896 -> 2ae3e38d over 8 days of unrelated commits, doc stayed v5.3.3, and BOTH vendored blocks are still byte-identical to the fetchable copy. The earlier reading (245 behind, R22 carrying the pre-fix @<owner> byline) was true when taken and is now resolved by ai-maestro#135."
     }
   },
   "blocks": {
     "R22": {
       "source_path": "docs/GOVERNANCE-RULES.md",
-      "source_lines": "1191-1201",
+      "source_lines": "1192-1202",
       "extent": "invariant paragraph + rule table + rationale; the dated '> Implementation' status blockquote is deliberately excluded \u2014 it is status, not rule",
       "sha256": "ed310c8cc5843a40b338962148748a3de12a8c8cf2f36387acc2469fd8a51774",
       "bytes": 2394,
@@ -53,7 +54,7 @@
     },
     "R23": {
       "source_path": "docs/GOVERNANCE-RULES.md",
-      "source_lines": "1207-1220",
+      "source_lines": "1208-1221",
       "extent": "invariant paragraph + rule table + rationale; the dated '> Implementation' status blockquote is deliberately excluded \u2014 it is status, not rule",
       "sha256": "5aaca4de781c817c67e6520c5aa707f34cdc115c96b4fd919719c05f49c201fc",
       "bytes": 2975,

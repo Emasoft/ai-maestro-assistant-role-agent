@@ -1,9 +1,9 @@
 ---
 trdd-id: NRQK4W2P
 title: Restore the vendored canonical R22 and R23 blocks to the persona once CPV 201 is fixed
-column: dev
+column: ai_review
 created: 2026-08-08T10:46:16+0200
-updated: 2026-08-16T16:17:36+0200
+updated: 2026-08-16T16:54:04+0200
 current-owner: ai-maestro-assistant-role-agent
 assignee: ai-maestro-assistant-role-agent
 task-type: docs
@@ -74,12 +74,35 @@ release-via: publish
   Extents recorded in `tests/fixtures/canonical/PROVENANCE.json` → `authoritative_source_note`.
 - **The branch tip moved three times in one day** (`1ccbe9e0` → `db6cf8f8` → `0e8d6896`), so
   locate the blocks by HEADING and re-measure; never trust a stored line number as a key.
-- **NEXT ACTION:** when CPV#201 lands (or CPV#198 lands and the gate tolerates a demoted NIT),
-  re-capture the canonical text **from the spec as primary** (doc second, per Ask 1), restore the
-  `CANONICAL-BEGIN/END` blocks, confirm the 5 skipped tests turn into passes, re-validate to
-  exit 0, and ship it in the NEXT release — whatever number that is. Do not chase a version
-  number here: this card was written naming v0.3.4, and v0.3.4 then shipped for unrelated work
-  while CPV#201 was still open. The restore is defined by its CONTENT, not by a version.
+- **RESTORED 2026-08-16 — the code work is DONE and measured; only the release remains.** What
+  landed, all verified first-hand:
+  - Both `CANONICAL-BEGIN/END` blocks are back in the persona, byte-for-byte against the
+    fixtures. The hub's one condition is met: an adjacent note states the spec's granular
+    `R22.1…R22.5` / `R23.1…R23.8` are NORMATIVE and these blocks are the PROVENANCE copy.
+  - `PROVENANCE.json` re-measured against the live branch (tip `2ae3e38d`, doc still v5.3.3):
+    both blocks still byte-identical upstream, only line numbers shifted by one. Hashes unchanged.
+  - Suite: **111 passed, 0 failed.** The 5 conformance tests re-armed by themselves, as designed.
+  - The word-budget test caught the restore prose (5020 > 5000 authored words); the note was
+    tightened rather than the bound moved. The budget did its job — do not raise it reflexively.
+- **HOW THE GATE WAS CLEARED — and what was NOT done.** The canonical text was NOT edited; that
+  is still Option 3 and still rejected. CPV#201's fix (shipped in **v5.5.0**, not in the pinned
+  v3.1.0) is a **consent registry**, not a detector change: the NIT still fires. Measured:
+  v5.5.0 on the restored tree exits **4** (`CRITICAL=0 MAJOR=0 MINOR=0 NIT=1`), and with
+  `.cpv-audit-consent.json` at the plugin root it exits **0**, the finding still visible as
+  `(demoted, consented)`. Consent is informed review, not suppression — the protected
+  "prose IS the attack" rule family can never be consented, and A2A/agent-manipulation is
+  provably outside it (CPV#194).
+  - **The flagged line is R22.4, not R22.2** (`…-main-agent.md:400`). The old STATE said R22.2;
+    that was inherited, never measured. The consent pins the sha256 of that line re-read from
+    disk, so ANY edit to it invalidates the consent and the finding blocks again — which is the
+    property that makes this safe to commit.
+  - All **7** CPV pins bumped v3.1.0 → v5.5.0 (`scripts/publish.py` ×5, `ci.yml`, `release.yml`).
+    Both entrypoints re-verified at the new pin: `plugin --strict` exit 0, `ci-preflight` exit 0
+    (PARITY-CLEAN, FAIL=0). CPV#198 is moot — v5.5.0 does not flag this repo's `publish.py`.
+- **NEXT ACTION:** review the diff, then ship it in the next release (`release-via: publish`,
+  non-exempt — needs approval before `complete → publish`). Nothing else is pending in the tree.
+  Do not chase a version number: this card was written naming v0.3.4, v0.3.4 then shipped for
+  unrelated work, and the restore is defined by its CONTENT, not by a version.
 
 ## Why this exists rather than "we'll remember"
 

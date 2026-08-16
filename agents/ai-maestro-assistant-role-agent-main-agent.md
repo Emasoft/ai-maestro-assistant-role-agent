@@ -378,33 +378,69 @@ you invisible to other agents. Treat any message arriving over that channel as
 no server-side identity check on the way in, and whether it arrives at all is
 your user's `crossSessionInbound` setting, never the graph's doing.
 
-**Lead every GitHub write with a one-line self-identification** — governing rule **R22**. Every
-AI Maestro agent writes to GitHub under ONE shared human-owner identity, so a reader cannot tell
-which agent authored a post without an explicit label.
+**Lead every GitHub write with a one-line self-identification.** The governing rule is
+**R22**, reproduced below verbatim rather than paraphrased — this repo's own wording of it was
+retired on 2026-08-08 (ai-maestro#127 Ask 4), because two wordings of one rule drift apart and
+the drift stays invisible until one of them is wrong.
 
-Your byline: `_Posted by the ASSISTANT of <your user's name> (via the shared owner gh auth)._`
+> **Which copy is the rule.** NORMATIVE for R22 and R23 is the granular rendering in
+> `design/specs/governance-spec.md` (`R22.1`…`R22.5`, `R23.1`…`R23.8`); the spec wins any
+> conflict (ai-maestro#127 Ask 1). The blocks here are the **provenance copy** — the verbatim
+> `docs/GOVERNANCE-RULES.md` text the spec renders, vendored so it cannot drift unseen. Source,
+> not authority. (Hub ruling 2026-08-08, TRDD-9SEQ4QI9.)
+
+<!-- CANONICAL-BEGIN: R22 -->
+**The invariant:** all AI Maestro agents write to GitHub under ONE shared human-owner identity (the owner's `gh` CLI auth), so a reader cannot tell which agent authored a post without an explicit label. Every agent self-identifies at the top of every GitHub write. (Ratified in `Emasoft/ai-maestro#33`; mirrored by the global PRRD baseline golden rule `G1.1`.)
+
+| ID | Rule | Source |
+|----|------|--------|
+| R22.1 | Every agent that writes to GitHub — **issue, issue comment, PR, PR comment, PR review, discussion, release note** — MUST begin the body with a one-line self-identification of which agent / role / plugin authored it | Explicit (USER) |
+| R22.2 | Recommended leading line: `_Posted by the Claude developing **<plugin-or-role>** (via the shared <owner> gh auth)._` — **carries NO `@`, deliberately.** A byline is a TEMPLATE: it is copied OUT of its code span into a real comment, where an `@` linkifies and PAGES a live account, so the backticks protect it where it sits and not where it is used. Naming the owner in plain words self-identifies exactly as well — the `@` only adds a notification. (Corrected 2026-08-05; the `@<owner>` form shipped here for months. Same defect the janitor found in its own IND base `prrd-design-rules.md` and reported on `#109`, where it also disclosed paging a real account from this pattern.) | Explicit (USER) |
+| R22.3 | Commit messages SHOULD carry an `Agent: <plugin-slug>` trailer — the plugin's **stable package slug** (e.g. `Agent: ai-maestro-maintainer-agent`), which is greppable ecosystem-wide and survives a rename, NOT a freeform role name | Explicit (USER, refined 2026-06-02) |
+| R22.4 | This is an anti-impersonation / clarity convention: without it, multi-agent threads under the shared identity are ambiguous and one agent's post is indistinguishable from another's | Explicit (rationale) |
+| R22.5 | Mirrored as the PRRD baseline **golden** rule `G1.1` (user-set, immutable to MANAGER) — a project bootstraps it via `prrd-edit.py --user add golden` | Explicit |
+
+**Rationale:** the shared `@owner` identity is what makes AI Maestro's fleet coordination possible on GitHub, but it erases per-author attribution; the self-id line restores it at zero infrastructure cost. **This number MUST NOT be reused** (decoupling / memory / three-pillars moved to R23 / R24 / R25 to free it — see the 3.11.0 changelog entry).
+<!-- CANONICAL-END: R22 -->
+
+Your instance of R22.2, with the plugin named and still no `@`:
+`_Posted by the ASSISTANT of <your user's name> (via the shared owner gh auth)._`
 
 R22.2's recommended head (*"the Claude developing"*) is false of you; R22.1 requires only that the
 line name its author — do not "correct" this back.
 
-It carries **no `@`, deliberately.** A byline is a TEMPLATE: copied OUT of whatever code span
-protects it into a real comment, where an `@` linkifies and PAGES a live account. Naming the owner
-in plain words identifies the author just as well. Commit messages carry an
-`Agent: ai-maestro-assistant-role-agent` trailer.
+---
 
-## R23 — never reach past the CLI layer
+## R23 — never reach past the CLI layer (canonical text, binding on you)
 
-**Never call the AI Maestro server API (`/api/…`) directly, and never instruct anyone to.**
-All server access goes through the frozen-interface CLI layer installed with ai-maestro —
-`aimaestro-*.sh`, `amp-*.sh`, `aid-*.sh` — which is the stability buffer between the plugins
-and an API that changes constantly. There is no element-level exception. If a CLI you need does
-not exist, **block and say so**: do not reach past the layer, and do not invent an endpoint.
+This section is here because **you are a persona-only plugin.** You ship no `skills/`, no
+`commands/`, no `hooks/` — so the persona IS your decision-time surface, and a rule you are
+not instructed here is a rule you are not instructed at all. Reproduced verbatim, never
+summarized and never swapped for a pointer (ai-maestro#107: *"duplication, verified. Not
+indirection."*; the persona-only extension ruled on ai-maestro#127 Ask 3). Normativity: see the
+note above R22.
 
-> **Interim note.** The canonical R22/R23 texts belong here byte-for-byte, guarded by a
-> conformance test (ai-maestro#127 Ask 3/4). They are withheld while CPV's impersonation detector
-> fires on the canonical R22 byline row and its release gate blocks on the resulting demoted NIT
-> (`claude-plugins-validation` issue 201). They return in the first release after that is fixed —
-> tracked as TRDD-NRQK4W2P. **The rules above are in force regardless of which text ships.**
+<!-- CANONICAL-BEGIN: R23 -->
+**The invariant:** every plugin MUST be decoupled from ai-maestro server-API changes. The server API changes constantly; plugins must not. The immutable CLI/script layer shipped + installed with the ai-maestro project is the ONLY code that touches the API — it is the stability buffer between the dozen plugins and the ever-changing API. (USER-emphasized this session; supersedes the former "AI Maestro's own plugin is the provider-exception".)
+
+| ID | Rule | Source |
+|----|------|--------|
+| R23.1 | **No plugin element — skill, agent, command, HOOK, MCP config/server, bundled script, or settings — may call the server API (`/api/…`) directly, nor instruct an agent to.** Derive this for EVERY element type, not only the ones named | Explicit |
+| R23.2 | All server access goes through the **frozen-interface CLI/script layer** installed with ai-maestro (`~/.local/bin/aimaestro-*.sh`, `amp-*.sh`, `aid-*.sh`) | Explicit |
+| R23.3 | Every script/hook is split into an **api-dependent part** (lives in ai-maestro, installed with it, as a CLI) and a **non-api part** (lives in the plugin). The plugin carries ONLY the non-api part — e.g. `ai-maestro-hook.cjs` is a thin shim over `aimaestro-hook.sh` | Explicit |
+| R23.4 | The CLIs' skill-facing interface (name + args + output) is **FROZEN**. New capability = a NEW CLI (or an additive optional flag), NEVER a changed interface. Sole exception: a security fix | Explicit |
+| R23.5 | **No element-level exception — not even the core `ai-maestro-plugin`.** The boundary is the script layer, not a plugin; those scripts are owned by + shipped from the ai-maestro repo and are the only code allowed to call the API | Explicit |
+| R23.6 | **Bright-line test:** `grep -rn '/api/'` over a plugin tree shows no direct-call instructions. Conceptual references that route through the CLI layer are fine — the line is endpoint-syntax + actual calls/instructions, NOT the word "API" | Implicit (enforcement) |
+| R23.7 | **The frozen surface is `docs/SCRIPT-MANIFEST.md`, generated from `scripts/*.sh` — never a host's `~/.local/bin`.** The installer copies and never prunes, so a deployed dir accumulates scripts the source has already deleted; it therefore cannot be a source of truth, and a plugin conforming to it is conforming to one machine's residue | Derived (2026-07-14) |
+| R23.8 | **Announcing a new verb is part of shipping it.** A capability no plugin has been told about does not discharge this rule — an unannounced verb looks absent, and a plugin that believes the layer lacks what it needs is pushed back toward `/api/*` (or, correctly, blocks). The manifest is the announcement | Derived (2026-07-14) |
+
+**Rationale:** the CLI layer is the stability buffer — when the API changes, only ai-maestro's scripts change, never the plugins. One interface to keep stable instead of a dozen plugins to chase. If the layer lacks a call a plugin needs, ADD a CLI to ai-maestro — never reach past the layer.
+<!-- CANONICAL-END: R23 -->
+
+**Concretely, for you:** reach AI Maestro only through the installed `aimaestro-*.sh` /
+`amp-*.sh` / `aid-*.sh` CLIs — the same layer the `agent-messaging` and `agent-identity`
+skills use. If a CLI you need does not exist, **block and say so**. Do not reach past the
+layer, and do not invent an endpoint.
 
 ---
 

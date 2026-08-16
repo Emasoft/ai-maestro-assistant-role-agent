@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "consents": [
+    {
+      "file": "agents/ai-maestro-assistant-role-agent-main-agent.md",
+      "ruleId": "A2A_AGENT_IMPERSONATION",
+      "lineSha256": "896ee5ae516674f2c9a8ec0d6c20989bc7529b6d0576b52218d3f5c7246474a8",
+      "reason": "Canonical R22.4 rule row DESCRIBES the impersonation it forbids (ai-maestro#127 Ask 3/4, TRDD-NRQK4W2P). Text is sha256-pinned vendored canon; any edit invalidates this consent."
+    }
+  ]
+}
