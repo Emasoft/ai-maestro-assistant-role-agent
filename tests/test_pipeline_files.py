@@ -193,3 +193,20 @@ def test_dev_extra_declares_the_test_toolchain(pyproject: dict[str, Any]) -> Non
     dev = " ".join(pyproject["project"]["optional-dependencies"]["dev"])
     assert "pytest" in dev
     assert "pytest-split" in dev
+
+
+def test_publish_retry_calls_capture_stderr(repo_root: Path) -> None:
+    """No publish.py retry call passes capture_output=False — that starves the classifier.
+
+    run_with_retry decides transient-vs-permanent by READING stderr; with
+    capture_output=False subprocess.run leaves stderr as None, every failure
+    looks permanent, and the 60-attempt retry budget collapses to 1 attempt
+    (TRDD-E0NETVRP, Phase-1 audit axis-4 C1). Comments are stripped first so
+    the in-code explanation of this very bug does not trip the guard.
+    """
+    text = (repo_root / "scripts" / "publish.py").read_text(encoding="utf-8")
+    code_only = "\n".join(line.split("#", 1)[0] for line in text.splitlines())
+    assert "capture_output=False" not in code_only, (
+        "publish.py passes capture_output=False — the retry classifier gets no "
+        "stderr and never retries (see TRDD-E0NETVRP)"
+    )

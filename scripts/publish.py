@@ -575,7 +575,7 @@ def do_bump(root: Path, new_ver: str, dry_run: bool = False) -> bool:
 
 def install_hook(root: Path) -> int:
     """Copy git-hooks/pre-push to .git/hooks/pre-push and set core.hooksPath."""
-    cprint(f"\\n{BOLD}Installing git hooks...{NC}")
+    cprint(f"\n{BOLD}Installing git hooks...{NC}")
     source = root / "git-hooks" / "pre-push"
     if not source.is_file():
         cprint(f"  {RED}git-hooks/pre-push not found{NC}")
@@ -638,7 +638,7 @@ def install_branch_rules(root: Path) -> int:
     hook alone is bypassable with `git push --no-verify`, but a ruleset is
     enforced by GitHub itself.
     """
-    cprint(f"\\n{BOLD}Installing branch-protection ruleset...{NC}")
+    cprint(f"\n{BOLD}Installing branch-protection ruleset...{NC}")
     slug = _get_origin_slug(root)
     if slug is None:
         cprint(f"  {RED}Could not read origin remote URL — skipping.{NC}")
@@ -1575,19 +1575,6 @@ def _read_remote_version(plugin_root: Path) -> str | None:
     return None
 
 
-def _infer_bump_type(old: str, new: str) -> str | None:
-    """Classify a semver delta as 'major', 'minor', 'patch', or None."""
-    o = parse_semver(old)
-    n = parse_semver(new)
-    if o is None or n is None or n <= o:
-        return None
-    if n[0] != o[0]:
-        return "major"
-    if n[1] != o[1]:
-        return "minor"
-    return "patch"
-
-
 def _git_porcelain_clean(root: Path) -> bool:
     """True iff `git status --porcelain` is empty (working tree clean)."""
     try:
@@ -1944,11 +1931,21 @@ def stage_commit_and_push(root: Path, new_ver: str, dry_run: bool) -> None:
     # update fails. git_with_retry still wraps the call so transient
     # network hiccups (4xx-class permanent errors fall through immediately).
     cprint(f"  {BLUE}$ git push --atomic origin {' '.join(push_refs)}{NC}")
-    git_with_retry(
-        ["git", "push", "--atomic", "origin", *push_refs],
-        cwd=str(root),
-        capture_output=False,
-    )
+    # capture_output must stay True (the default): run_with_retry classifies a
+    # failure as transient by READING stderr, and with capture_output=False
+    # subprocess.run leaves result.stderr as None, so every failure looked
+    # permanent and the 60-attempt retry budget silently collapsed to 1 attempt
+    # (TRDD-E0NETVRP). Capturing swallows git's error text into the exception,
+    # so echo it before failing fast — a mute push failure is undiagnosable.
+    try:
+        git_with_retry(
+            ["git", "push", "--atomic", "origin", *push_refs],
+            cwd=str(root),
+        )
+    except subprocess.CalledProcessError as e:
+        if e.stderr:
+            print(e.stderr, file=sys.stderr, end="")
+        raise
     _pushed = tag if dep_tag is None else f"{tag} + {dep_tag}"
     cprint(f"  {GREEN}Pushed {_pushed} atomically.{NC}")
 

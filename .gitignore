@@ -14,7 +14,10 @@ tests_dev/
 
 # safe-delete staging area. Holds files moved out of the tree pending review,
 # so committing it would republish content someone deliberately removed.
-.trashcan/
+# The rule is the anchored /.trashcan/* block at the end of this file — a bare
+# `.trashcan/` here would ignore the directory itself, making the .gitkeep /
+# README.txt survival-marker negations below it dead (git cannot re-include
+# inside an ignored directory).
 
 # Claude Code per-session cache / local state.
 #
@@ -72,3 +75,6 @@ llm_externalizer_output/
 .env
 .coverage
 node_modules/
+/.trashcan/*
+!/.trashcan/.gitkeep
+!/.trashcan/README.txt
