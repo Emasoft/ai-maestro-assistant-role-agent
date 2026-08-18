@@ -1,9 +1,9 @@
 ---
 trdd-id: E0NETVRP
 title: Restore retry on the atomic push — capture_output=False starves the transient classifier
-column: todo
+column: completed
 created: 2026-08-18T19:59:09+0200
-updated: 2026-08-18T19:59:09+0200
+updated: 2026-08-18T20:05:50+0200
 current-owner: ai-maestro-assistant-role-agent
 assignee: ai-maestro-assistant-role-agent
 task-type: bugfix
@@ -13,7 +13,7 @@ approval-tier: 0
 severity: high
 blocked-by: []
 external-refs: [reports/plugin-self-audit/20260816_171109+0200-axis4-bugs.md C1]
-implementation-commits: []
+implementation-commits: [7b4e8ba]
 ---
 
 # Restore retry on the atomic push — capture_output=False starves the transient classifier
@@ -41,13 +41,14 @@ commit and tag already exist locally.
 
 ## Acceptance criteria
 
-- [ ] `capture_output=False` no longer reaches `git_with_retry`/`gh_with_retry` anywhere in
+- [x] `capture_output=False` no longer reaches `git_with_retry`/`gh_with_retry` anywhere in
       `scripts/publish.py`.
-- [ ] Final-failure path still surfaces git's stderr to the terminal.
-- [ ] Regression test added and passing; full suite green.
+- [x] Final-failure path still surfaces git's stderr to the terminal.
+- [x] Regression test added and passing; full suite green.
 
 ## Approval log
 
 - 2026-08-18T19:59:09+0200 — Tier-0 self-mandate (in-scope bugfix); PHASE-2 GO relayed by hub
   under the USER's delegation, USER re-granted in-session ("granted. follow the ai-maestro
   instructions").
+- 2026-08-18T20:05:50+0200 — COMPLETED by ai-maestro-assistant-role-agent. Fixed, verified (112 tests pass, ruff+mypy clean), landed on main.
