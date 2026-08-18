@@ -1,9 +1,9 @@
 ---
 trdd-id: NRQK4W2P
 title: Restore the vendored canonical R22 and R23 blocks to the persona once CPV 201 is fixed
-column: ai_review
+column: human_review
 created: 2026-08-08T10:46:16+0200
-updated: 2026-08-16T16:54:04+0200
+updated: 2026-08-18T16:28:32+0200
 current-owner: ai-maestro-assistant-role-agent
 assignee: ai-maestro-assistant-role-agent
 task-type: docs
@@ -100,10 +100,25 @@ implementation-commits: [6be9eaf]
   - All **7** CPV pins bumped v3.1.0 → v5.5.0 (`scripts/publish.py` ×5, `ci.yml`, `release.yml`).
     Both entrypoints re-verified at the new pin: `plugin --strict` exit 0, `ci-preflight` exit 0
     (PARITY-CLEAN, FAIL=0). CPV#198 is moot — v5.5.0 does not flag this repo's `publish.py`.
-- **NEXT ACTION:** review the diff, then ship it in the next release (`release-via: publish`,
-  non-exempt — needs approval before `complete → publish`). Nothing else is pending in the tree.
-  Do not chase a version number: this card was written naming v0.3.4, v0.3.4 then shipped for
-  unrelated work, and the restore is defined by its CONTENT, not by a version.
+- **AI REVIEW DONE 2026-08-18 — clean, but it caught a REGRESSION the 08-16 measurement could
+  not have seen.** Re-measured first-hand on the current tree, not trusted from the note above:
+  `plugin --strict` at v5.5.0 exited **4** again (`CRITICAL=0 MAJOR=0 MINOR=0 NIT=1`). The
+  persona consent was fine (line 400 still hashes to the pinned value, reported `(demoted,
+  consented)`); the new NIT came from **`.claude/project/memory/cpv-release-gate-blocks-on-demoted-nit.md:20`**
+  — the memory note WRITTEN TO RECORD THIS EXACT FALSE POSITIVE, committed one commit later in
+  `40e15a6`, trips the same detector one layer up. Documenting the trap re-armed it.
+  - **Fixed by a second consent entry, not by rewording the note.** Rewording our own accurate
+    prose to dodge a regex is the anti-pattern the note itself records; consent keeps the finding
+    VISIBLE and sha256-pins the line so any edit re-blocks. Gate now exits **0**
+    (`CRITICAL=0 MAJOR=0 MINOR=0 NIT=0 WARNING=6`, both findings shown as `(demoted, consented)`).
+    Tests re-run after the edit: **111 passed, 0 skipped**.
+  - **The general lesson, for the next writer:** any file added under the plugin root that
+    DESCRIBES an `A2A_AGENT_IMPERSONATION` pattern will fail the gate — including a memory note,
+    a TRDD, or a README. Expect to consent it; do not paraphrase the description away.
+- **NEXT ACTION:** USER approval to ship (`release-via: publish`, `complete → publish` is
+  non-exempt). Everything else is done and measured; the tree is clean. Do not chase a version
+  number: this card was written naming v0.3.4, v0.3.4 then shipped for unrelated work, and the
+  restore is defined by its CONTENT, not by a version.
 
 ## Why this exists rather than "we'll remember"
 
@@ -115,19 +130,24 @@ reader to find out this was deliberate and temporary.
 
 ## Acceptance criteria
 
-- [ ] CPV#201 fixed (a demoted NIT no longer blocks the release gate), or CPV ships a
-      `--fail-on=` control the pipeline can use.
-- [ ] `CANONICAL-BEGIN/END: R22` and `: R23` restored to the persona byte-for-byte, re-captured
+- [x] CPV#201 fixed (a demoted NIT no longer blocks the release gate), or CPV ships a
+      `--fail-on=` control the pipeline can use. — shipped in v5.5.0 as a CONSENT REGISTRY; the
+      NIT still fires and is consented, not silenced.
+- [x] `CANONICAL-BEGIN/END: R22` and `: R23` restored to the persona byte-for-byte, re-captured
       from `docs/GOVERNANCE-RULES.md` at the then-current upstream ref, not pasted from memory.
-- [ ] **A line adjacent to the restored blocks declares the spec's granular renderings
+      — lines 392-404 and 423-438.
+- [x] **A line adjacent to the restored blocks declares the spec's granular renderings
       (`R22.1`…`R22.5` / `R23.1`…`R23.8`) NORMATIVE and these blocks PROVENANCE** — the hub's
       explicit condition for letting the two coexist (`TRDD-9SEQ4QI9`). Without it the vendored
-      prose reads as the rule.
-- [ ] `PROVENANCE.json` re-measured against the then-current fork tip in the same commit
-      (it moved twice in one day on 2026-08-08; assume it moved again).
-- [ ] The 5 skipped tests report as PASSED, not skipped — that is the proof the restore landed.
+      prose reads as the rule. — line 386.
+- [x] `PROVENANCE.json` re-measured against the then-current fork tip in the same commit
+      (it moved twice in one day on 2026-08-08; assume it moved again). — `2ae3e38d`, captured
+      2026-08-16T16:27.
+- [x] The 5 skipped tests report as PASSED, not skipped — that is the proof the restore landed.
+      — 111 passed, 0 skipped, re-run 2026-08-18.
 - [ ] Full validation exits 0 and the restore is published (any version; see the STATE note —
       v0.3.4 was consumed by unrelated work on 2026-08-08 while this card was still blocked).
+      — validation exits 0 as of 2026-08-18; PUBLISH still pending USER approval.
 
 ## Approval log
 

@@ -6,6 +6,12 @@
       "ruleId": "A2A_AGENT_IMPERSONATION",
       "lineSha256": "896ee5ae516674f2c9a8ec0d6c20989bc7529b6d0576b52218d3f5c7246474a8",
       "reason": "Canonical R22.4 rule row DESCRIBES the impersonation it forbids (ai-maestro#127 Ask 3/4, TRDD-NRQK4W2P). Text is sha256-pinned vendored canon; any edit invalidates this consent."
+    },
+    {
+      "file": ".claude/project/memory/cpv-release-gate-blocks-on-demoted-nit.md",
+      "ruleId": "A2A_AGENT_IMPERSONATION",
+      "lineSha256": "b542c946c4545ebfac9720fd6b45b28b5d953f978cb37cc114c00611bc249727",
+      "reason": "The memory note EXPLAINING this detector's false positive trips the detector itself — same class as the consent above, one layer up. Rewording accurate documentation to dodge a regex is the anti-pattern the note itself records, so it is consented, not edited."
     }
   ]
 }
