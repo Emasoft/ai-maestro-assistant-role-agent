@@ -1,9 +1,9 @@
 ---
 trdd-id: NRQK4W2P
 title: Restore the vendored canonical R22 and R23 blocks to the persona once CPV 201 is fixed
-column: human_review
+column: published
 created: 2026-08-08T10:46:16+0200
-updated: 2026-08-18T16:28:32+0200
+updated: 2026-08-18T20:13:10+0200
 current-owner: ai-maestro-assistant-role-agent
 assignee: ai-maestro-assistant-role-agent
 task-type: docs
@@ -145,9 +145,10 @@ reader to find out this was deliberate and temporary.
       2026-08-16T16:27.
 - [x] The 5 skipped tests report as PASSED, not skipped — that is the proof the restore landed.
       — 111 passed, 0 skipped, re-run 2026-08-18.
-- [ ] Full validation exits 0 and the restore is published (any version; see the STATE note —
+- [x] Full validation exits 0 and the restore is published (any version; see the STATE note —
       v0.3.4 was consumed by unrelated work on 2026-08-08 while this card was still blocked).
-      — validation exits 0 as of 2026-08-18; PUBLISH still pending USER approval.
+      — validation exit 0; SHIPPED in **v0.4.0**, 2026-08-18 (release
+      https://github.com/Emasoft/ai-maestro-assistant-role-agent/releases/tag/v0.4.0).
 
 ## Approval log
 
@@ -158,3 +159,7 @@ reader to find out this was deliberate and temporary.
   canonical text so it stops matching the detector — was explicitly REJECTED by that ruling and
   by this agent: safety documentation is indistinguishable from the pattern it forbids to a
   regex, and weakening the decision surface to pass a gate is the anti-pattern the rules name.
+- 2026-08-18T20:13:10+0200 — PUBLISHED in v0.4.0 by ai-maestro-assistant-role-agent under the
+  hub's PHASE-2 GO ("publish per your release policy after changes land"; human_review routed to
+  the hub per that dispatch) and the USER's in-session grant ("granted. follow the ai-maestro
+  instructions"). Gate exit 0, 112 tests pass, atomic push + GH release succeeded.
