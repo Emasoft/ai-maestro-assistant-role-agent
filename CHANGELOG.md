@@ -4,6 +4,30 @@ _Released by the ASSISTANT role-plugin (via the shared owner gh auth)._
 
 All notable changes to this project will be documented in this file.
 
+## [0.4.0] — 2026-08-18
+
+### Bug Fixes
+
+- **publish:** Render release notes from explicit tag range — --current is blind when HEAD carries the dependency tag (a302857)
+- **gate:** Consent the memory note that documents the false positive (TRDD-NRQK4W2P) (cc0b52e)
+- **publish:** Restore atomic-push retry, real newlines, drop dead helper (TRDD-E0NETVRP, TRDD-ULD03IAG, TRDD-F8D1BH24) (7b4e8ba)
+
+### Documentation
+
+- Unblock TRDD-NRQK4W2P — CPV#201 closed 2026-08-15, blocked → dev (77ba992)
+- Record 6be9eaf on TRDD-NRQK4W2P (7660aed)
+- Add TRDD-E0NETVRP, TRDD-ULD03IAG, TRDD-I42GB55M, TRDD-F8D1BH24 — Phase-2 cards from the hub-ledgered Phase-1 audit (e96e1ec)
+- **ci:** De-version the stale CPV-pin comments (TRDD-I42GB55M) (dba029c)
+- Archive TRDD-E0NETVRP, TRDD-ULD03IAG, TRDD-I42GB55M, TRDD-F8D1BH24 → completed (f84e8d0)
+- Record the completed state on the four archived Phase-2 cards (dffd3a9)
+
+### Features
+
+- **persona:** Restore the canonical R22/R23 blocks (TRDD-NRQK4W2P) (6be9eaf)
+
+### Miscellaneous Tasks
+
+- Track PROJECT-scope memory, and record how the CPV gate was cleared (40e15a6)
 ## [0.3.7] — 2026-08-15
 
 ### Bug Fixes
@@ -16,6 +40,10 @@ All notable changes to this project will be documented in this file.
 
 - TRDD-1I4S7H44 -> complete; it shipped in v0.3.6 and sat open for three days (b65f6ef)
 - Archive TRDD-3W9HE416 (GHCFG-001) — withdrawn by the janitor (352dee1)
+
+### Miscellaneous Tasks
+
+- Bump version to 0.3.7 (baf615c)
 
 ### Styling
 
