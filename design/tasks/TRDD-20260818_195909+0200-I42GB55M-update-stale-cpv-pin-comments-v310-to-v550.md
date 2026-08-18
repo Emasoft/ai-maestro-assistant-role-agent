@@ -20,7 +20,7 @@ implementation-commits: []
 
 Phase-1 audit axis-4 C3 ≡ axis-2 C1 (same defect, found from two axes). Verified first-hand:
 `.github/workflows/ci.yml:170` and `.github/workflows/release.yml:57` carry comments saying
-"CPV is PINNED to @v3.1.0" while the `uvx --from` lines below (ci.yml:196, release.yml:85) pin
+"CPV is PINNED to `@v3.1.0`" while the `uvx --from` lines below (ci.yml:196, release.yml:85) pin
 `@v5.5.0` — the TRDD-NRQK4W2P bump touched the code lines, not the prose. State the invariant
 without hardcoding the version number, so the comment cannot rot again on the next bump.
 

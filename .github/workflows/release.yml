@@ -54,10 +54,10 @@ jobs:
         # handler below says so instead of mislabelling it as findings, and
         # fails the release rather than publishing an unvalidated tag.
         # Issue #11: removed local scripts/validate_plugin.py invocation.
-        # Root-cause #2: CPV is PINNED to @v3.1.0 (same ref the
-        # CI validate job and publish.py use) so the cold uvx-from-git build is
-        # cached per tag and a stricter future CPV release cannot break the
-        # release gate with no plugin change. Root-cause #5: this re-runs the
+        # Root-cause #2: CPV is PINNED to a fixed tag (the @vX.Y.Z ref in the
+        # run block below — same ref the CI validate job and publish.py use) so
+        # the cold uvx-from-git build is cached per tag and a stricter future
+        # CPV release cannot break the release gate with no plugin change. Root-cause #5: this re-runs the
         # gate publish.py already passed locally — pinning all three callsites
         # to the SAME ref keeps that consistent; the gate itself stays intact
         # (no security check is weakened).
