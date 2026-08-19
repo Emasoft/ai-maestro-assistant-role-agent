@@ -60,7 +60,14 @@ def test_ships_no_bundled_skills(agent_toml: dict[str, Any]) -> None:
 def test_declares_the_required_external_skills(agent_toml: dict[str, Any]) -> None:
     """The external skills the persona actually invokes are declared."""
     external = set(agent_toml.get("dependencies", {}).get("external_skills", []))
-    for required in ("planning", "agent-messaging", "agent-identity", "team-kanban"):
+    # Namespaced canonical names (hub ruling 2026-08-19): these skills ship in
+    # ai-maestro-plugin, and the bare names no longer resolve as invocables.
+    for required in (
+        "ai-maestro-plugin:planning",
+        "ai-maestro-plugin:agent-messaging",
+        "ai-maestro-plugin:agent-identity",
+        "ai-maestro-plugin:team-kanban",
+    ):
         assert required in external, f"external_skills is missing '{required}'"
 
 
