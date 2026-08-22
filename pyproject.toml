@@ -29,6 +29,17 @@ dev = [
     "ruff>=0.14.14",
 ]
 
+[tool.pytest.ini_options]
+# CI and publish.py both invoke `pytest tests/` explicitly, so they were never
+# exposed to this: a BARE `pytest` collects from the rootdir and walks into
+# `docs_dev/`, where snapshots of in-flight work keep same-named test modules
+# (`test_agent_definition.py`, `test_transport_claims.py`). pytest then aborts
+# the whole run with "import file mismatch" and collects NOTHING — a red that
+# says nothing about the code. Pinning testpaths makes the bare command mean
+# what every caller already assumes it means.
+testpaths = ["tests"]
+norecursedirs = ["docs_dev", "reports_dev", "scripts_dev", ".trashcan", ".venv"]
+
 [tool.ruff]
 line-length = 120
 # Test fixtures are deliberately-malformed sample data that exercise this
