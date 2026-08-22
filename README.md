@@ -109,7 +109,8 @@ never a comm-graph one: neither the absence nor the presence of an error says
 anything about permission. And contact there is not only sending —
 `notify_when_idle` subscribes to another session's idle signal with no message at
 all, which the persona forbids as observation rather than excusing as a non-send.
-Inbound
+The roster cuts both ways too: seeing a session there is no licence to contact
+it, and not seeing one is no evidence it is absent. Inbound
 messages are governed only by the user's `crossSessionInbound` setting. The
 persona states all of this in full; it is duplicated here deliberately, not
 delegated (ai-maestro#107).

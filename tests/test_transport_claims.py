@@ -140,6 +140,13 @@ def test_the_guard_detects_a_bare_claim_and_clears_a_complete_one() -> None:
 # Each row is a fact the persona once got wrong by omission, so each is pinned
 # with the release that established it — a future edit that narrows the channel
 # back to "another live session on this host" fails here instead of shipping.
+#
+# HONEST LIMIT OF THIS MECHANISM: a regex pins a PHRASE, not a claim. It catches
+# deletion (the failure that actually happened, three releases running) and it
+# does not catch a rewrite that keeps the words while inverting the meaning, nor
+# does it bless a paraphrase that states the same fact differently. Patterns are
+# therefore kept as loose as they can be without matching unrelated prose, and a
+# deliberate rewording is expected to update its row rather than route around it.
 _CURRENT_REACH = {
     "other machines (2.1.225: SendMessage starts a conversation with your Remote Control sessions elsewhere)": (
         re.compile(r"other machines", re.IGNORECASE)
@@ -160,7 +167,7 @@ _CURRENT_REACH = {
     # speaking would relax the limit this whole persona exists to hold. The
     # persona must therefore say the errors are DELIVERY verdicts.
     "the error semantics (2.1.238/2.1.235/2.1.234: failures are delivery verdicts, never comm-graph ones)": (
-        re.compile(r"delivery\*?\s+verdict", re.IGNORECASE)
+        re.compile(r"delivery[-\s*]{0,3}(?:level\s+)?verdict", re.IGNORECASE)
     ),
     # 2.1.236 added `notify_when_idle`: a subscription to another live session's
     # next idle-or-exit signal that delivers NO message and is documented as
@@ -171,7 +178,7 @@ _CURRENT_REACH = {
         re.compile(r"notify_when_idle", re.IGNORECASE)
     ),
     # 2.1.240 made ListAgents list live TEAMMATES too, and 2.1.239 fixed
-    # `/`-titled sessions showing as "(untitled)" and being unaddressable. The
+    # `/`-titled sessions showing as "(untitled)" and not reachable by name. The
     # roster has been wrong in the ABSENT direction twice, so the persona's
     # "seeing a session is no licence" needs its converse: not seeing one is no
     # evidence it isn't there.
