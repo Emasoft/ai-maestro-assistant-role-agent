@@ -150,6 +150,34 @@ _CURRENT_REACH = {
     "the inbound control (2.1.224/2.1.232: crossSessionInbound is the only gate, and it is the user's)": (
         re.compile(r"crossSessionInbound", re.IGNORECASE)
     ),
+    # 2.1.238 made the channel FALLIBLE: a recipient with crossSessionInbound
+    # "refuse" now reports "refused" to the SENDER, an inbox dropping on rate
+    # limit tells the sender (2.1.238), an oversized message is refused up front
+    # (2.1.235), and a session list too long to check is now declared instead of
+    # read as absence (2.1.234). Before those, "no error" was the only outcome
+    # and "absence of an error is not evidence of permission" said enough. Now an
+    # error IS reachable, and an agent that reads one as the graph finally
+    # speaking would relax the limit this whole persona exists to hold. The
+    # persona must therefore say the errors are DELIVERY verdicts.
+    "the error semantics (2.1.238/2.1.235/2.1.234: failures are delivery verdicts, never comm-graph ones)": (
+        re.compile(r"delivery\*?\s+verdict", re.IGNORECASE)
+    ),
+    # 2.1.236 added `notify_when_idle`: a subscription to another live session's
+    # next idle-or-exit signal that delivers NO message and is documented as
+    # costing its target nothing. FORBIDDEN #5 is phrased "NEVER message", so a
+    # zero-message subscription slips under the wording while doing exactly what
+    # R39.7 (invisible) and R42.8 (no agent may observe you are stuck) deny.
+    "the zero-message subscription (2.1.236: notify_when_idle observes without sending)": (
+        re.compile(r"notify_when_idle", re.IGNORECASE)
+    ),
+    # 2.1.240 made ListAgents list live TEAMMATES too, and 2.1.239 fixed
+    # `/`-titled sessions showing as "(untitled)" and being unaddressable. The
+    # roster has been wrong in the ABSENT direction twice, so the persona's
+    # "seeing a session is no licence" needs its converse: not seeing one is no
+    # evidence it isn't there.
+    "the converse of the roster (2.1.240/2.1.239: an absent row is not evidence of an absent session)": (
+        re.compile(r"no evidence it is absent", re.IGNORECASE)
+    ),
 }
 
 

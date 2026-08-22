@@ -102,7 +102,14 @@ Maestro server, which checks every send against the comm-graph and returns HTTP
 `SendMessage` to a live session, `ListAgents` to enumerate them (including
 sessions on **other machines** and in the cloud), and a `@name` mention typed in
 the prompt all bypass the server entirely, so **no 403 is possible there** and
-the comm-graph is unenforced — the limit is the persona's alone to hold. Inbound
+the comm-graph is unenforced — the limit is the persona's alone to hold. That
+channel does surface failures now (a refused inbound, a dropped or oversized
+message, a roster too long to read fully), but every one is a *delivery* verdict,
+never a comm-graph one: neither the absence nor the presence of an error says
+anything about permission. And contact there is not only sending —
+`notify_when_idle` subscribes to another session's idle signal with no message at
+all, which the persona forbids as observation rather than excusing as a non-send.
+Inbound
 messages are governed only by the user's `crossSessionInbound` setting. The
 persona states all of this in full; it is duplicated here deliberately, not
 delegated (ai-maestro#107).
