@@ -4,6 +4,16 @@ _Released by the ASSISTANT role-plugin (via the shared owner gh auth)._
 
 All notable changes to this project will be documented in this file.
 
+## [0.5.0] — 2026-08-25
+
+### Documentation
+
+- TRDD-4E1P2A1T design pass — persona G7.1 bullet spec, paid by deleting example 3; column design → design_ai_review (36e9584)
+- Archive TRDD-4E1P2A1T → complete (as itself, 3P-ZON-05) (e516899)
+
+### Features
+
+- Persona G7.1 visual-artifact duty for design_human_review (TRDD-4E1P2A1T) (c4d33a9)
 ## [0.4.1] — 2026-08-25
 
 ### Bug Fixes
@@ -26,6 +36,7 @@ All notable changes to this project will be documented in this file.
 ### Miscellaneous Tasks
 
 - Add 8 board-vocabulary words to the cspell dictionary (c2b3693)
+- Bump version to 0.4.1 (69ecf3b)
 ## [0.4.0] — 2026-08-18
 
 ### Bug Fixes
