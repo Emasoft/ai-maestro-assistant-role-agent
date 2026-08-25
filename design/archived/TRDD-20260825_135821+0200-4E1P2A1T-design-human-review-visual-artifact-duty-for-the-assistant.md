@@ -1,9 +1,10 @@
 ---
 trdd-id: 4E1P2A1T
 title: design_human_review visual-artifact duty for the ASSISTANT role (PRRD G7.1)
-column: ai_review
+column: complete
 created: 2026-08-25T13:58:21+0200
-updated: 2026-08-25T17:25:00+0200
+updated: 2026-08-25T17:40:00+0200
+implementation-commits: [36e9584, c4d33a9]
 current-owner: main-claude
 task-type: feature
 release-via: publish
@@ -112,5 +113,14 @@ NOT move the ceiling.
 - 2026-08-25T13:58:21+0200 — Authored directly as Tier-0 in-scope intake (feature ask
   for this repo's own persona), parked at `backburner`, under the USER delegation of
   2026-08-25. No approval needed to queue; implementation will need its own design pass.
+- 2026-08-25T17:10:00+0200 — design_ai_review PASS by fork reviewer (budget math,
+  G7.1 fidelity, example-3 pay-for all verified; one dev-time caveat settled).
+  design_human_review SKIPPED (min-approval-requirement: none).
+- 2026-08-25T17:35:00+0200 — ai_review PASS by fork reviewer on c4d33a9 (spec
+  fidelity, clean deletion, measured budget 4899/5000, guard-regex verified,
+  113 tests green). human_review covered by the explicit USER directive relayed
+  via HUB ("complete ALL open TRDDs; a card that can move must move").
+- 2026-08-25T17:40:00+0200 — COMPLETED by main-claude under the same USER
+  directive; release follows via publish.py (release-via: publish).
 
 ## Notes and lessons learned
