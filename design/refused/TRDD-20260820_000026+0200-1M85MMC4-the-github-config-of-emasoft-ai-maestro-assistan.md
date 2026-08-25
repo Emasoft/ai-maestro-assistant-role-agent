@@ -1,9 +1,9 @@
 ---
 trdd-id: 1M85MMC4
 title: the GitHub config of Emasoft/ai-maestro-assistant-role-agent is off-baseline — NO_PR_REVIEW
-column: proposal
+column: refused
 created: 2026-08-20T00:00:26+0200
-updated: 2026-08-20T17:45:00+0200
+updated: 2026-08-25T13:58:21+0200
 current-owner: janitor
 blocked-by: [janitor#283]
 task-type: bugfix
@@ -17,9 +17,12 @@ ticket-origin: fleet-github-config
 
 # the GitHub config of Emasoft/ai-maestro-assistant-role-agent is off-baseline — NO_PR_REVIEW
 
-## ⏵ STATE — READ THIS FIRST ON RESUME (authoritative; supersedes the body) — 2026-08-20
+## ⏵ STATE — READ THIS FIRST ON RESUME (authoritative; supersedes the body) — 2026-08-25
 
-**HOLD — do NOT approve. Blocked by janitor#283 (verified detector false positive).**
+**REFUSED 2026-08-25 — verified detector false positive; see Approval log.** The prior
+HOLD is resolved: janitor#283 closed upstream on 2026-08-20, and the repo's ruleset was
+re-read first-hand on 2026-08-25 and is correct under the USER's 2026-08-13 solo-owner
+ruling. Approving would have let the fixer RE-IMPOSE the removed `pull_request` rule.
 
 The NO_PR_REVIEW finding is the third live instance of janitor#283: the detector
 (`github_config_audit.py:195-197`) flags NO_PR_REVIEW unconditionally whenever the
@@ -66,5 +69,16 @@ scheduler dispatches **janitor-security-agent** to fix it at the next free heart
 The dispatched agent is fail-safe: it fixes what is safe and FLAGS what needs a human (it never
 rotates credentials, never force-pushes, never pushes to `main`). It returns one line plus a report
 path, and closes the ticket with an explicit status.
+
+## Approval log
+
+- 2026-08-25T13:58:21+0200 — REFUSED by main Claude under USER delegation of 2026-08-25
+  ("complete all pending tasks and TRDDs … decide yourself … verify first"). Verified
+  first-hand today: `gh api repos/Emasoft/ai-maestro-assistant-role-agent/rulesets/20239488`
+  → rules = `[required_status_checks]` only (no `pull_request`) — the correct shape per the
+  USER Tier-3 ruling 2026-08-13 (solo-owner repos carry no PR-review rule). Upstream
+  janitor#283 (the detector flagging NO_PR_REVIEW unconditionally) is CLOSED
+  (2026-08-20T06:56Z). The finding is a false positive and the proposed fix would re-impose
+  the removed rule — refused, not approved.
 
 ## Notes and lessons learned
