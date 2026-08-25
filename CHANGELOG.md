@@ -4,6 +4,28 @@ _Released by the ASSISTANT role-plugin (via the shared owner gh auth)._
 
 All notable changes to this project will be documented in this file.
 
+## [0.4.1] — 2026-08-25
+
+### Bug Fixes
+
+- **tests:** Pin testpaths so a bare `pytest` collects the real suite (8516cc2)
+- **guards:** Close the README gap, loosen a brittle pin, drop a new unknown word (7e0321b)
+
+### Documentation
+
+- Archive TRDD-NRQK4W2P → published (shipped in v0.4.0) (b1863e3)
+- Namespace external-skill references to ai-maestro-plugin:* (hub sweep 2026-08-19) (50b3c0e)
+- Hold TRDD-1M85MMC4 — blocked-by janitor#283 (detector false positive) (087d723)
+- **persona:** Align the unpoliced-channel rules with Claude Code 2.1.233-2.1.240 (f13bb59)
+- Refuse TRDD-1M85MMC4 → refused (734a696)
+- Archive 9 complete TRDDs → design/archived/ (as themselves, 3P-ZON-05) (b69ac18)
+- Add TRDD-HSJ1D0A6 — retroactive record of the CC 2.1.233-240 persona alignment (50c3798)
+- Add TRDD-4E1P2A1T — G7.1 visual-artifact duty, parked at backburner (cdea42c)
+- TRDD-4E1P2A1T — provenance verified at c8b0e9cb, re-column backburner → design (0bb57dd)
+
+### Miscellaneous Tasks
+
+- Add 8 board-vocabulary words to the cspell dictionary (c2b3693)
 ## [0.4.0] — 2026-08-18
 
 ### Bug Fixes
@@ -28,6 +50,7 @@ All notable changes to this project will be documented in this file.
 ### Miscellaneous Tasks
 
 - Track PROJECT-scope memory, and record how the CPV gate was cleared (40e15a6)
+- Bump version to 0.4.0 (be573c1)
 ## [0.3.7] — 2026-08-15
 
 ### Bug Fixes
