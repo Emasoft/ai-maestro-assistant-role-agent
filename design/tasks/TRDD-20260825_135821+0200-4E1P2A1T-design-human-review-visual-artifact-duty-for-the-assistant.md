@@ -1,9 +1,9 @@
 ---
 trdd-id: 4E1P2A1T
 title: design_human_review visual-artifact duty for the ASSISTANT role (PRRD G7.1)
-column: design_ai_review
+column: ai_review
 created: 2026-08-25T13:58:21+0200
-updated: 2026-08-25T17:05:00+0200
+updated: 2026-08-25T17:25:00+0200
 current-owner: main-claude
 task-type: feature
 release-via: publish
@@ -77,6 +77,35 @@ NOT move the ceiling.
   trim can't silently drop it.
 - EHT: sweep repo docs/README for example-count references ("four examples" etc.)
   after the deletion (check-all-files-after-breaking-change).
+
+## Plan (gates passed 2026-08-25 17:15)
+
+- design_ai_review: PASS by fork reviewer (verdict in session transcript) —
+  caveat: settle prohibition-regex overlap before commit. design_human_review
+  SKIPPED (min-approval-requirement: none). → todo.
+- verify_assumptions: the 3 prohibition regexes (`_REQUIRED_PROHIBITIONS`,
+  tests/test_agent_definition.py:100-104 — negation+create+agent, +team, +sudo)
+  match nothing inside example 3's text; its FORBIDDEN-section matches are
+  untouched. Verified by reading both files first-hand. → plan.
+- plan: (1) persona edit — insert G7.1 bullet after the kanban bullet, delete
+  example 3 whole; (2) add keyword-guard test for the G7.1 duty (EHT, inline);
+  (3) doc sweep for example-count references (EHT, inline); (4) gate:
+  `uv run pytest tests/ -q` green; (5) publish via publish.py, watch CI pinned
+  to the pushed commit. EHTs executed inline in this dev pass (each is <15 min
+  and inseparable from the edit); recorded here rather than as separate cards.
+- If example 3 is ever wanted back: it was the only example with a `manager:`
+  turn (reviewer note); recover from git history of this commit's parent.
+
+## Dev + testing evidence (2026-08-25 17:25)
+
+- Persona: G7.1 bullet inserted under Planning capability; example 3 deleted
+  whole. Authored words MEASURED post-edit: **4899**/5000 (was 4981).
+- EHT 1 done inline: `test_agent_body_states_the_visual_artifact_duty` added
+  (guards design_human_review + G7.1 cite + annotatable-artifact sentence).
+- EHT 2 done inline: doc sweep for example-count references — zero hits.
+- Testing: `uv run pytest tests/ -q` → **113 passed**. ruff clean;
+  "annotatable" added to .cspell.json (only new-word hit; remaining cspell
+  locals are pre-existing and CI-green on v0.4.1).
 
 ## Approval log
 

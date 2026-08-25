@@ -130,6 +130,22 @@ def test_agent_body_forbids_creating_agents_or_teams(agent_body: str) -> None:
         assert re.search(pattern, lowered), f"persona no longer states the '{label}' prohibition"
 
 
+def test_agent_body_states_the_visual_artifact_duty(agent_body: str) -> None:
+    """The PRRD G7.1 design_human_review visual-artifact duty survives edits (TRDD-4E1P2A1T).
+
+    Guarded like the prohibitions: a later budget trim must not silently drop
+    the duty to render an annotatable mockup artifact and record the
+    annotations back onto the card.
+    """
+    lowered = agent_body.lower()
+    assert "design_human_review" in lowered, "persona no longer names the design_human_review column"
+    assert "g7.1" in lowered, "persona no longer cites PRRD G7.1"
+    # Duty core in one sentence: an artifact the user can annotate.
+    assert re.search(r"visual artifact[^.]{0,300}annotate", lowered), (
+        "persona no longer states the annotatable-visual-artifact duty"
+    )
+
+
 def test_agent_body_has_no_absolute_home_paths(agent_text: str) -> None:
     """No developer-machine absolute path leaks into the shipped persona."""
     for leak in ("/Users/", "/home/", "C:\\Users\\"):

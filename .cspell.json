@@ -37,6 +37,7 @@
     "addopts",
     "agent",
     "aimaestro",
+    "annotatable",
     "anthropic",
     "assistant",
     "asyncio",
