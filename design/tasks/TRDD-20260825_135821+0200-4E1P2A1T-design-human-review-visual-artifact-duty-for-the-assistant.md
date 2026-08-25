@@ -1,12 +1,13 @@
 ---
 trdd-id: 4E1P2A1T
 title: design_human_review visual-artifact duty for the ASSISTANT role (PRRD G7.1)
-column: backburner
+column: design
 created: 2026-08-25T13:58:21+0200
-updated: 2026-08-25T13:58:21+0200
+updated: 2026-08-25T14:20:00+0200
 current-owner: main-claude
 task-type: feature
 release-via: publish
+min-approval-requirement: none
 ---
 
 # design_human_review visual-artifact duty for the ASSISTANT role (PRRD G7.1)
@@ -23,20 +24,26 @@ ships. The capability does not exist yet anywhere: it is a ratified requirement 
 implementation (a feature ask, not a process to follow today). The column is skipped
 entirely when min-approval-requirement is `none`.
 
-## Why backburner, not todo
+## ⏵ STATE — READ THIS FIRST ON RESUME (authoritative; supersedes the body) — 2026-08-25
 
-The governing spec is **unpublished**: it lives on ai-maestro branch `governance-rules`,
-which was 282 commits ahead of its remote as of 2026-08-23 (peer session
-`ai-maestro-b9`, self-corrected notification; published state was 2026-08-21). Nothing
-here can be verified against a fetchable SSOT, so this card queues the work without
-pretending the requirement is actionable. Provenance is the peer notification plus its
-correction (spec repairs 3P-KAN-20/-10/-21, repair commit cited as 928c96b3 —
-unverifiable from this repo, treat as hearsay until the branch is pushed).
+Provenance is now VERIFIED, not hearsay: `governance-rules` head `c8b0e9cb`
+(2026-08-23T15:10:43Z) read first-hand via `gh api`, and the G7.1 text fetched from
+that blob (`design/requirements/PRRD.md` line 108) matches the peer's summary — the
+artifact-creation procedure is "usually delegated to the MANAGER agent … or to the
+ASSISTANT for ordinary non-MAESTRO USERS", and the column is skipped when the approval
+level is `none`. The card was authored 2026-08-25 (after the 3P-KAN-21 grandfather
+line), so 3.0.0 semantics apply: approved (Tier-0 intake, `min-approval-requirement:
+none`) + undesigned ⇒ `column: design`, not `backburner`.
 
-**Activate (move to `todo`) when** the 3-pillars 3.0.0 spec and ai-maestro PRRD G7.1
-are actually published and fetchable; re-verify the G7.1 text first-hand then, and only
-then design what the ASSISTANT persona must state or do about visual-artifact
-generation.
+**NEXT ACTION (one step):** run the design pass — decide what the shipped ASSISTANT
+persona must state about generating a visual artifact the human can annotate (Artifact tool +
+comment threads are a plausible substrate) when a UI-design card reaches
+`design_human_review`, under the hard constraint that the persona is ~20 words below
+its 5000-word ceiling (`test_agent_body_stays_within_its_word_budget`), so every
+addition must be paid for by a deletion. Deliberately NOT done in the 2026-08-25
+session: a persona edit made without review at the budget ceiling was judged out of scope for
+"complete pending tasks" (a persona edit at the budget ceiling without review risks the
+product) — the card is filed, verified, and correctly columned instead.
 
 ## Approval log
 
