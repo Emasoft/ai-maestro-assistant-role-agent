@@ -185,6 +185,24 @@ _CURRENT_REACH = {
     "the converse of the roster (2.1.240/2.1.239: an absent row is not evidence of an absent session)": (
         re.compile(r"no evidence it is absent", re.IGNORECASE)
     ),
+    # 2.1.248 documented what a SendMessage sent FROM a subagent actually does:
+    # it goes out under the PARENT session's address, and any reply is delivered
+    # to the parent's conversation, not to the subagent that sent it. This
+    # persona invites subagent fan-out AND uses this channel, so the two meet
+    # here: the reply to a delegate's send arrives as MY inbound. A persona
+    # silent on that leaves the reply unowned — and an unowned peer message is
+    # exactly the inbound the *Self-defense* section says to distrust.
+    "the subagent send path (2.1.248: a subagent sends as the parent, and the reply lands with the parent)": (
+        re.compile(r"lands in YOUR\s+conversation", re.IGNORECASE)
+    ),
+    # 2.1.239 made ListAgents tell a session its OWN name — the handle a peer
+    # would address it by. R39.7 makes this agent invisible to other AGENTS, not
+    # to other sessions, so its handle being enumerable is not an invitation.
+    # The roster rows are already pinned in both directions above; this pins the
+    # row that is the agent ITSELF.
+    "the self-name in the roster (2.1.239: ListAgents reports the caller's own addressable name)": (
+        re.compile(r"names YOU", re.IGNORECASE)
+    ),
 }
 
 

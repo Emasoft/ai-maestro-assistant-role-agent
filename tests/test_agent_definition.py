@@ -238,3 +238,32 @@ def test_agent_body_names_listagents_as_the_enumeration_surface(agent_body: str)
         "persona never names `ListAgents` — an agent reading only this file "
         "cannot know that enumerating a session is not a licence to contact it"
     )
+
+
+def test_agent_body_treats_a_truncated_subagent_result_as_partial(agent_body: str) -> None:
+    """The persona knows a subagent stopped at its turn limit reports PARTIAL work.
+
+    Claude Code 2.1.246 changed a subagent that exhausts `maxTurns` from
+    APPEARING FINISHED to returning its output marked partial, with a hint to
+    continue it via `SendMessage`. The distinction is invisible in the result's
+    shape, which is what makes it dangerous here: this persona explicitly invites
+    fan-out to subagents, and the adjacent instruction is to treat what one
+    reports back as findings to verify. Verifying a half-finished scan as though
+    it were a whole one draws exactly the false conclusion that instruction
+    exists to prevent — so the persona must name the partial case itself.
+
+    Pinned in BOTH halves deliberately. "marked partial" alone is two ordinary
+    words a reword could keep while inverting the meaning; the recovery clause is
+    what makes the warning actionable, and a persona that says a result may be
+    partial without saying what to do about it has documented a dead end.
+    """
+    assert re.search(r"marked partial", agent_body, re.IGNORECASE), (
+        "persona never warns that a subagent stopped at its turn limit returns "
+        "PARTIAL output — an agent reading only this file will read a truncated "
+        "report as a finished one"
+    )
+    assert re.search(r"resumable with `SendMessage`", agent_body), (
+        "persona names the partial case but not its recovery — an agent told a "
+        "result is partial and not told it can be continued via `SendMessage` "
+        "will redo the work instead of finishing it"
+    )
