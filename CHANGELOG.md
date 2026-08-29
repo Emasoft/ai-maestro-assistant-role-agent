@@ -4,6 +4,11 @@ _Released by the ASSISTANT role-plugin (via the shared owner gh auth)._
 
 All notable changes to this project will be documented in this file.
 
+## [0.5.1] — 2026-08-29
+
+### Documentation
+
+- Persona alignment with Claude Code 2.1.241-2.1.248 (TRDD-8GZ3TZD0) (8c23117)
 ## [0.5.0] — 2026-08-25
 
 ### Documentation
@@ -14,6 +19,10 @@ All notable changes to this project will be documented in this file.
 ### Features
 
 - Persona G7.1 visual-artifact duty for design_human_review (TRDD-4E1P2A1T) (c4d33a9)
+
+### Miscellaneous Tasks
+
+- Bump version to 0.5.0 (8825ecb)
 ## [0.4.1] — 2026-08-25
 
 ### Bug Fixes
