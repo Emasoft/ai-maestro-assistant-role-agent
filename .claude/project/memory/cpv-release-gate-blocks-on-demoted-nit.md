@@ -1,8 +1,8 @@
 ---
 name: cpv-release-gate-blocks-on-demoted-nit
-description: "CPV release gate exits non-zero on a demoted NIT even at CRITICAL=0 MAJOR=0 MINOR=0; the canonical R22 rule row trips A2A_AGENT_IMPERSONATION and made the plugin unreleasable. Fix is .cpv-audit-consent.json (CPV v5.5.0+), never editing the rule text."
+description: "CPV release gate exits non-zero on a demoted NIT even at CRITICAL=0 MAJOR=0 MINOR=0 / the canonical R22 rule row trips A2A_AGENT_IMPERSONATION and made the plugin unreleasable / fix is .cpv-audit-consent.json (CPV v5.5.0+), never editing the rule text / why does the publish gate fail when every validator severity is zero / release pipeline blocks on a consented false positive / publish.py exits 4 with no CRITICAL MAJOR or MINOR findings / validator flags a rule that only describes impersonation / skillaudit cannot tell a rule about spoofing from an attempt at it / consent registry reviewed false positive / how to demote a NIT that is really documentation prose / CI disagrees with the local audit gate after a CPV version pin change"
 ocd: 2026-08-16
-lmd: 2026-08-16
+lmd: 2026-09-29
 metadata:
   node_type: memory
   type: project
