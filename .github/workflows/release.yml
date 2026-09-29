@@ -11,23 +11,40 @@ on:
 permissions:
   contents: read
 
+# One release per ref at a time, and never cancel one mid-flight: a re-pushed
+# tag must QUEUE behind the in-flight run, not kill it between `gh release
+# create` and the asset/attestation uploads.
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
-  release:
+  # THREE JOBS, NOT ONE. This was a single job that ran validation and then the
+  # WHOLE suite SERIALLY (`pytest tests/ -v`) before cutting the release. Both
+  # are gates on the same commit and neither consumes the other's result, so
+  # they now run CONCURRENTLY, and the suite is sharded with the SAME
+  # pytest-split matrix ci.yml already uses. Each shard stays SERIAL (no -n),
+  # which is what keeps an order-dependent serial-pollution bug catchable
+  # inside a shard — sharding buys wall clock, never coverage.
+  # The release job needs validation-report.txt (it is a release asset), so the
+  # validate job hands it over as an artifact rather than the release job
+  # re-running the validator to regenerate a file it already produced.
+  validate:
+    name: Validate
     runs-on: ubuntu-latest
-    # Cold-install ceiling (issues #90 + #114). `uvx --from git+…` clones and
-    # builds CPV from source on a COLD runner — 12-20 min. The UV cache below
-    # makes every run after the first fast; the FIRST cold build must fit
-    # under this cap. 30 min is the documented cold ceiling; do NOT lower it
-    # below 25.
+    # VALIDATION budget (issues #90 + #114 + #180) — not a build budget.
+    # A timeout here is NOT a git-fetch or cold-build stall: with the cache
+    # below, the CPV build was measured finishing ~4s into the step while the
+    # step still ran to this cap (#180). Do not chase the ref or the pin. The
+    # step is tee'd, so a killed run still shows what was in flight.
+    # 30 min with headroom; do NOT lower it below 25.
     timeout-minutes: 30
     permissions:
-      contents: write       # create the release + upload assets
-      id-token: write       # OIDC token for build-provenance attestation (#121)
-      attestations: write   # write the provenance attestation (#121)
+      contents: read
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
-          fetch-depth: 0
+          # zizmor artipacked: nothing in this job pushes (issue #151).
           persist-credentials: false
 
       - name: Install uv
@@ -54,10 +71,10 @@ jobs:
         # handler below says so instead of mislabelling it as findings, and
         # fails the release rather than publishing an unvalidated tag.
         # Issue #11: removed local scripts/validate_plugin.py invocation.
-        # Root-cause #2: CPV is PINNED to a fixed tag (the @vX.Y.Z ref in the
-        # run block below — same ref the CI validate job and publish.py use) so
-        # the cold uvx-from-git build is cached per tag and a stricter future
-        # CPV release cannot break the release gate with no plugin change. Root-cause #5: this re-runs the
+        # Root-cause #2: CPV is PINNED to @v5.21.1 (same ref the
+        # CI validate job and publish.py use) so the cold uvx-from-git build is
+        # cached per tag and a stricter future CPV release cannot break the
+        # release gate with no plugin change. Root-cause #5: this re-runs the
         # gate publish.py already passed locally — pinning all three callsites
         # to the SAME ref keeps that consistent; the gate itself stays intact
         # (no security check is weakened).
@@ -82,39 +99,138 @@ jobs:
           PLUGIN_REPO_LINT_PHASE_TIMEOUT: "600"
         run: |
           set +e
-          uvx --from git+https://github.com/Emasoft/claude-plugins-validation@v5.5.0 \
+          PYTHONUNBUFFERED=1 uvx --from git+https://github.com/Emasoft/claude-plugins-validation@v5.21.1 \
               --with pyyaml \
               cpv-remote-validate plugin . --strict \
-              > "validation-report.txt" 2>&1
-          exit_code=$?
+              2>&1 | tee "validation-report.txt"
+          # Quoted on every use: with `exit_code=$?` shellcheck could infer the
+          # value is numeric and stayed silent, but it cannot infer that through
+          # ${PIPESTATUS[0]}, so an unquoted expansion trips SC2086 — and the
+          # generated Lint job runs actionlint, which would turn every scaffolded
+          # plugin's CI red.
+          exit_code=${PIPESTATUS[0]}
           set -e
-          cat "validation-report.txt"
-          if [ $exit_code -eq 0 ]; then
+          if [ "$exit_code" -eq 0 ]; then
             echo "Validation passed"
             exit 0
           fi
           # CPV's verdict exit codes are 1-4. Anything else — and any 1-4 with no
           # SUMMARY line — means the validator never produced a verdict (a failed
           # uvx/git fetch exits 1 or 2 exactly like a findings verdict).
-          if [ $exit_code -ge 1 ] && [ $exit_code -le 4 ] \
+          if [ "$exit_code" -ge 1 ] && [ "$exit_code" -le 4 ] \
              && grep -q "SUMMARY: CRITICAL=" "validation-report.txt"; then
             echo "::error::Validation failed (exit $exit_code: CRITICAL/MAJOR/MINOR/NIT found)"
-            exit $exit_code
+            exit "$exit_code"
           fi
           echo "::error::CPV validator FAILED TO RUN (exit $exit_code) — infra/network/install failure, NOT a validation verdict. No findings were produced; do not read this as CRITICAL/MAJOR/MINOR/NIT. See the log above (a cold 'uvx --from git+...' build can fail on a transient GitHub git-fetch)."
           exit 1
-
-      - name: Run tests
-        run: |
-          if [ -d "tests" ]; then
-            uv run pytest tests/ -v
-          fi
 
       - name: Lint Python scripts
         run: uv run ruff check scripts/
 
       - name: Type check
         run: uv run mypy scripts/ --ignore-missing-imports
+
+      - name: Upload validation report
+        # Handed to the release job, which uploads it as a release asset. This
+        # artifact hand-off is what lets validation run BESIDE the test shards
+        # instead of inside the release job.
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: validation-report
+          path: validation-report.txt
+          if-no-files-found: error
+          retention-days: 7
+
+  test-shard:
+    name: Test Shard ${{ matrix.group }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    # Ubuntu-only on purpose: ci.yml already ran the ubuntu+macOS matrix on
+    # this same commit, so re-running macOS here buys no coverage and costs
+    # wall clock on the release path.
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        group: [1, 2]
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          persist-credentials: false
+
+      - name: Install uv
+        # enable-cache: true keys an actions/cache on UV_CACHE_DIR so the
+        # cold `uvx --from git+…` build of CPV (12-20 min, issue #114) is
+        # paid ONCE per lockfile/runner; later runs restore the warm cache.
+        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39 # v8.2.0
+        with:
+          enable-cache: true
+
+      - name: Set up Python
+        run: uv python install 3.12
+
+      - name: Install dependencies
+        run: uv sync --extra dev
+
+      - name: Run tests (shard ${{ matrix.group }} of 2)
+        # Same serial + pytest-split shape as ci.yml (TRDD-K7P2XR4Q): each shard
+        # runs WITHOUT -n, so an order-dependent serial-pollution bug still
+        # surfaces within a shard. `--splits`/`--group` come from pytest-split,
+        # which the dev extra MUST declare (RC-9) — this matrix and pyproject's
+        # `dev` list are both driven by TEST_SHARD_COUNT /
+        # PYTEST_SPLIT_REQUIREMENT so they cannot desync.
+        run: |
+          # Issue #215 — `find`, not `ls tests/test_*.py`: the glob is
+          # top-level-only, so a tests/unit/ layout silently skipped the whole
+          # test job. An unmatched glob is also passed through literally, which
+          # makes `ls` a lying probe in its own right.
+          if [ -d "tests" ] && [ -n "$(find tests -name 'test_*.py' -type f -print -quit)" ]; then
+            set +e
+            uv run pytest tests/ --splits 2 --group ${{ matrix.group }} -v
+            code=$?
+            set -e
+            # Exit 5 = pytest "no tests collected": a legitimately-empty shard
+            # when the suite has fewer tests than splits (common on a small
+            # downstream suite). That is NOT a failure — propagate any other
+            # non-zero code as a real one.
+            if [ "$code" -eq 5 ]; then
+              echo "Empty shard (no tests landed in this split) — OK"
+              exit 0
+            fi
+            exit $code
+          else
+            echo "No test files found, skipping"
+          fi
+
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+    # Fail-closed: the release is cut only if validation passed AND every test
+    # shard passed. `needs` already short-circuits on failure — there is
+    # deliberately no `if: always()` here, because a release is exactly the
+    # thing that must not proceed on a red gate.
+    needs: [validate, test-shard]
+    timeout-minutes: 15
+    permissions:
+      contents: write       # create the release + upload assets
+      id-token: write       # OIDC token for build-provenance attestation (#121)
+      attestations: write   # write the provenance attestation (#121)
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          # The changelog step walks back to the previous tag.
+          fetch-depth: 0
+          # `gh release` authenticates via GH_TOKEN and nothing here pushes.
+          persist-credentials: false
+
+      - name: Download validation report
+        # Restores validation-report.txt into the workspace root, where the
+        # SHA256SUMS step and `gh release upload` both reference it by name.
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: validation-report
 
       - name: Generate SBOM (SPDX)
         # SLSA supply-chain control (issue #121): produce an SPDX SBOM of the

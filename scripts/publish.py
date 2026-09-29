@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Unified publish pipeline: bypass-guard -> lint -> validate (remote CPV) -> test -> bump -> badge -> changelog -> commit -> push -> release.
+"""Unified publish pipeline: bypass-guard -> lint -> validate (remote CPV) -> test -> bump -> badge -> changelog -> commit -> push -> release -> verify-ci -> install-smoke.
 
 Modes:
   --gate                  Pre-push gate: orchestrator check + lint (ruff/jscpd/
@@ -8,7 +8,8 @@ Modes:
   --install-hook          Install git-hooks/pre-push into .git/hooks/ and set core.hooksPath.
   --install-branch-rules  Apply the cpv-branch-rules GitHub ruleset to the origin
                           (server-side CI enforcement — run once after first push).
-  (no flag)               Full release pipeline (11 stages, fail-fast). The bump type
+  (no flag)               Full release pipeline (17 steps — 0-14 fail-fast,
+                          15-16 post-release reporters). The bump type
                           is AUTO-DETECTED via `git-cliff --bumped-version` from the
                           conventional commits on HEAD.
   --patch/--minor/--major Force a specific bump type (overrides auto-detection).
@@ -16,26 +17,37 @@ Modes:
 Pipeline stages (all fail-fast — any non-zero exit aborts):
    0. Bypass guard — reject CPV_SKIP_*, SKIP_*, NO_VERIFY env vars
    1. Check working tree is clean
-   2. Lint files (ruff)
-   3. Validate plugin (uvx cpv-remote-validate plugin . --strict — fetches
+   2. Lint + type-check (ruff + mypy)
+   3. Run tests (pytest)
+   4. Validate plugin (uvx cpv-remote-validate plugin . --strict — fetches
       the canonical CPV validator from GitHub so this plugin never vendors
       a local copy and never drifts from upstream rules)
-   4. Run tests (pytest)
-  4b. CI-parity preflight (uvx cpv-remote-validate ci-preflight . — the
+   5. CI-parity preflight (uvx cpv-remote-validate ci-preflight . — the
       jscpd / actionlint / mypy / uv-sync-dev / Mega-Linter / static-CIP gates
       that CI's Lint job runs but `validate_plugin --strict` does NOT). Runs
       BEFORE the bump/commit/tag/push, so a pipeline defect can never leave a
       half-published state. A MISSING local tool degrades to a WARNING and never
       blocks the publish.
-   5. Marketplace-registration check (Layout A: notify workflow + PAT secret +
+   6. Marketplace-registration check (Layout A: notify workflow + PAT secret +
       remote marketplace.json registration + remote receiver workflow;
       Layout B: must run from marketplace root + nested plugin must be listed)
-   6. Check version consistency across all sources
-   7. Bump version in plugin.json, pyproject.toml, and __version__ vars
-   8. Update README version badge
-   9. Generate changelog (git-cliff)
-  10. Commit, tag, push
-  11. Create GitHub release (gh CLI)
+   7. Secret scan (trufflehog — a committed credential BLOCKS the publish;
+      canon CPV#217: a leaked auth key sat on main 85 days while every local
+      gate passed. Auto-installs trufflehog as a stage dependency; a missing
+      scanner blocks, because "cannot check" is not clean)
+   8. Linux fork-parity probe (re-runs the suite with multiprocessing forced
+      to fork, the way Linux CI runs it — the v3.23.0 deadlock class no
+      macOS local run can see)
+   9. Check version consistency across all sources
+  10. Bump version in plugin.json, pyproject.toml, and __version__ vars
+  11. Update README version badge
+  12. Generate changelog (git-cliff)
+  13. Commit, tag, push
+  14. Create GitHub release (gh CLI)
+Post-release reporters (the release is already public; they never abort the run):
+  15. Verify CI is green on the released commit (advisory)
+  16. Install smoke test (clean-dir `claude plugin install`; fails the run
+      only with CPV_PUBLISH_REQUIRE_INSTALL_SMOKE=1)
 
 Gate stages (--gate mode, called by pre-push hook):
    G0. Orchestrator check — direct `git push` is blocked; only publish.py
@@ -76,12 +88,17 @@ import stat
 import subprocess
 import sys
 import tempfile
+import time
 from pathlib import Path
+from typing import Any
 
 # Load gh / git retry wrappers from the sibling module so every push +
 # `gh release create` survives transient github.com hiccups (the retry
 # pattern from ~/.claude/rules/github-timeouts.md). Shipped verbatim
 # from the canonical CPV install via gen_cpv_network_resilience_py().
+# cpv_fork_parity rides the same import-fallback pattern: the fork-parity
+# stage (canon Gate 3c) degrades to a WARNING-without-probe when an older
+# scaffold has not shipped the module yet.
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 try:
     # `pyright: ignore[reportAssignmentType]` (on the import line itself):
@@ -123,6 +140,13 @@ except ImportError:
         kwargs.setdefault("capture_output", False)
         return subprocess.run(cmd, **kwargs)
 
+    def fork_parity_supported():  # type: ignore[no-untyped-def]
+        return False, "scripts/cpv_fork_parity.py missing — run `cpv standardize --force-templates`"
+
+    def run_under_linux_fork_default(cmd, cwd, timeout=1800.0, env=None):  # type: ignore[no-untyped-def]
+        raise ImportError("cpv_fork_parity not shipped")
+
+
 # -- ANSI colors ---------------------------------------------------------------
 
 
@@ -140,6 +164,36 @@ BLUE = "\033[0;34m" if _C else ""
 BOLD = "\033[1m" if _C else ""
 DIM = "\033[2m" if _C else ""
 NC = "\033[0m" if _C else ""
+
+# Fork-parity probe (canon Gate 3c). Import with fallback so an older scaffold
+# without scripts/cpv_fork_parity.py degrades to "cannot run the probe" instead
+# of a NameError mid-publish — the same ImportError idiom as the retry shims.
+try:
+    # The ignore mirrors the retry-shim idiom: the typed import and the None
+    # fallback are conditional variants of the same names with NON-identical
+    # types, which mypy reports as [assignment] on this import line itself.
+    from cpv_fork_parity import fork_parity_supported, run_under_linux_fork_default  # type: ignore[assignment]
+except ImportError:
+    fork_parity_supported = None  # type: ignore[assignment, misc]
+    run_under_linux_fork_default = None  # type: ignore[assignment, misc]
+
+# -- Push budget (canon issue #224) --------------------------------------------
+#
+# The pre-push hook runs INSIDE the `git push` call's wall clock, so the push
+# timeout must cover the whole downstream gate, not just the wire transfer:
+# the CPV remote-validate call plus the full pytest suite (both re-run inside
+# the hook) plus slack. Three attempts survives a flaky-link retry cycle
+# without turning a permanently red gate into a threefold wait.
+_CPV_TIMEOUT_SEC = 600.0
+_TEST_SUITE_TIMEOUT_SEC = 1800.0
+_PUSH_TIMEOUT_SEC = _CPV_TIMEOUT_SEC + 2 * _TEST_SUITE_TIMEOUT_SEC + 1800.0
+_PUSH_MAX_ATTEMPTS = 3
+
+# -- CI-verify + install-smoke budgets ------------------------------------------
+
+# Post-release CI verification budget. The release is already public when this
+# runs, so the timeout exists to bound the REPORT, never to gate the publish.
+_CI_VERIFY_DEFAULT_TIMEOUT_S = 900
 
 
 # -- Helpers -------------------------------------------------------------------
@@ -650,7 +704,7 @@ def install_branch_rules(root: Path) -> int:
             [
                 "uvx",
                 "--from",
-                "git+https://github.com/Emasoft/claude-plugins-validation@v5.5.0",
+                "git+https://github.com/Emasoft/claude-plugins-validation@v5.21.1",
                 "--with",
                 "pyyaml",
                 "cpv-setup-branch-rules",
@@ -930,7 +984,7 @@ def run_gate(root: Path) -> int:
         [
             "uvx",
             "--from",
-            "git+https://github.com/Emasoft/claude-plugins-validation@v5.5.0",
+            "git+https://github.com/Emasoft/claude-plugins-validation@v5.21.1",
             "--with",
             "pyyaml",
             "cpv-remote-validate",
@@ -1000,7 +1054,7 @@ def stage_bypass_guard() -> None:
     Both are documented exemptions, listed below and excluded from the
     pattern match.
     """
-    cprint(f"\n{BOLD}[0/11] Checking for bypass attempts...{NC}")
+    cprint(f"\n{BOLD}[0/17] Checking for bypass attempts...{NC}")
     # Explicit infrastructure exemptions — see docstring above.
     exemptions = {"CPV_SKIP_GITHUB_INTEGRITY", "CPV_SKIP_GH_AUTH_CHECK"}
     forbidden_prefixes = ("PLUGIN_SKIP_", "CPV_SKIP_", "SKIP_")
@@ -1021,7 +1075,7 @@ def stage_bypass_guard() -> None:
 
 def stage_check_clean(root: Path) -> None:
     """Step 1: Working tree must be clean."""
-    cprint(f"\n{BOLD}[1/11] Checking working tree...{NC}")
+    cprint(f"\n{BOLD}[1/17] Checking working tree...{NC}")
     r = run(["git", "status", "--porcelain"], cwd=root, capture=True)
     if r.stdout.strip():
         cprint(f"  {RED}Working tree is dirty. Commit or stash changes first.{NC}")
@@ -1038,7 +1092,7 @@ def stage_lint(root: Path) -> None:
     type errors. Type-checking runs BEFORE the test suite so the cheap fails
     come before the expensive ones.
     """
-    cprint(f"\n{BOLD}[2/11] Linting + type-checking...{NC}")
+    cprint(f"\n{BOLD}[2/17] Linting + type-checking...{NC}")
     scripts_dir = root / "scripts"
     if not scripts_dir.is_dir():
         cprint(f"  {RED}BLOCKED: scripts/ directory missing — cannot lint.{NC}")
@@ -1146,7 +1200,7 @@ def stage_tests(root: Path) -> None:
     unconditionally — the cleanup is a safety net, not a skip
     mechanism.
     """
-    cprint(f"\n{BOLD}[3/11] Running tests...{NC}")
+    cprint(f"\n{BOLD}[3/17] Running tests...{NC}")
     test_dir = root / "tests"
     if not test_dir.is_dir():
         cprint(f"  {RED}BLOCKED: tests/ directory missing.{NC}")
@@ -1175,13 +1229,13 @@ def stage_validate(root: Path) -> None:
 
     Cornerstone rule: a plugin cannot be pushed unless validation passes
     with 0 issues (WARNING allowed). The validator is ALWAYS fetched from
-    GitHub (git+https://github.com/Emasoft/claude-plugins-validation@v5.5.0) via
+    GitHub (git+https://github.com/Emasoft/claude-plugins-validation@v5.21.1) via
     uvx so a local tampered copy cannot weaken the rules. No exceptions.
 
     Order: runs AFTER lint + tests so behavioral regressions fail fast
     before the structural validator even looks at the manifest.
     """
-    cprint(f"\n{BOLD}[4/11] Validating plugin (remote CPV)...{NC}")
+    cprint(f"\n{BOLD}[4/17] Validating plugin (remote CPV)...{NC}")
     if not shutil.which("uvx"):
         cprint(f"  {RED}BLOCKED: uvx not found on PATH.{NC}")
         cprint(f"  {RED}Install via: brew install uv  or  pip install uv{NC}")
@@ -1192,7 +1246,7 @@ def stage_validate(root: Path) -> None:
         [
             "uvx",
             "--from",
-            "git+https://github.com/Emasoft/claude-plugins-validation@v5.5.0",
+            "git+https://github.com/Emasoft/claude-plugins-validation@v5.21.1",
             "--with",
             "pyyaml",
             "cpv-remote-validate",
@@ -1206,7 +1260,7 @@ def stage_validate(root: Path) -> None:
 
 
 def stage_ci_preflight(root: Path) -> None:
-    """Step 4b: CI-parity preflight via REMOTE CPV. MANDATORY — no skip.
+    """Step 4b→5 (renumbered): CI-parity preflight via REMOTE CPV. MANDATORY — no skip.
 
     WHY THIS STAGE EXISTS. `validate_plugin --strict` (stage 4) does NOT run the
     gates this plugin's own GitHub-CI Lint job runs: jscpd copy-paste, actionlint,
@@ -1226,7 +1280,7 @@ def stage_ci_preflight(root: Path) -> None:
     lean machine publishes exactly as before — it just gets less LOCAL coverage,
     which CI still enforces. Do not "harden" this into a hard tool requirement.
     """
-    cprint(f"\n{BOLD}[4b/11] CI-parity preflight (remote CPV)...{NC}")
+    cprint(f"\n{BOLD}[5/17] CI-parity preflight (remote CPV)...{NC}")
     if not shutil.which("uvx"):
         cprint(f"  {RED}BLOCKED: uvx not found on PATH.{NC}")
         cprint(f"  {RED}Install via: brew install uv  or  pip install uv{NC}")
@@ -1235,7 +1289,7 @@ def stage_ci_preflight(root: Path) -> None:
         [
             "uvx",
             "--from",
-            "git+https://github.com/Emasoft/claude-plugins-validation@v5.5.0",
+            "git+https://github.com/Emasoft/claude-plugins-validation@v5.21.1",
             "--with",
             "pyyaml",
             "cpv-remote-validate",
@@ -1428,7 +1482,7 @@ def _plugin_in_remote_marketplace(mkt_json: dict, plugin_name: str, expected_rep
 
 
 def stage_marketplace_registration(root: Path) -> None:
-    """Step 5: Verify the plugin is wired to its marketplace for auto-updates.
+    """Step 5→6 (renumbered): Verify the plugin is wired to its marketplace for auto-updates.
 
     Mirror of CPV's own publish.py Gate 6. Three modes:
       - Layout A (standalone + notify-marketplace.yml): verifies workflow,
@@ -1439,7 +1493,7 @@ def stage_marketplace_registration(root: Path) -> None:
       - 'none' (no marketplace wiring): emits a WARNING and proceeds — valid
         for first releases or experimental standalone plugins
     """
-    cprint(f"\n{BOLD}[5/11] Marketplace-registration check...{NC}")
+    cprint(f"\n{BOLD}[6/17] Marketplace-registration check...{NC}")
     layout, details = _detect_layout(root)
 
     if layout == "none":
@@ -1533,9 +1587,290 @@ def stage_marketplace_registration(root: Path) -> None:
         cprint(f"  {GREEN}Layout B marketplace registration verified.{NC}")
 
 
+# -- Secret scan (canon Gate 3d, issue #217) ------------------------------------
+#
+# The canonical pipeline documented a pre-push secret scan it never implemented;
+# a `tskey-auth-…` literal consequently reached a plugin's `main`, GitHub's own
+# secret scanning flagged it, and the alert sat open for 85 days while every
+# local gate passed. This repo's release gate must not inherit that hole.
+#
+# Implementation shape differs from canon BY DESIGN and follows this repo's
+# no-vendoring rule (stage_validate's docstring): canon imports
+# cpv_install_scanners / validate_security / cpv_validation_common from its own
+# tree. This repo fetches CPV remotely via uvx and vendors nothing, so the
+# scan runs the trufflehog BINARY directly with the same flags canon's
+# check_trufflehog passes (--results widening from issue #219, --concurrency),
+# and uses `git ls-files` as the unshipped-paths oracle instead of CPV's
+# GitignoreFilter — same verdict, one fewer dependency. Redaction is not this
+# stage's job; it reports and blocks.
+
+
+def _trufflehog_scan_paths(root: Path) -> list[str] | None:
+    """Git-tracked files under `root`, relative — the set a release actually ships.
+
+    Returns None when git itself is unreadable (the caller then fails closed
+    rather than scanning a guessed set). Untracked scratch is excluded on the
+    same reasoning as canon's gitignore filter: gitignored = not shipped, and
+    dev-scratch trees legitimately quote fixture credentials.
+    """
+    try:
+        r = subprocess.run(
+            ["git", "ls-files", "-z"],
+            cwd=str(root),
+            capture_output=True,
+            text=False,
+            check=False,
+            timeout=60,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return None
+    if r.returncode != 0:
+        return None
+    return [p.decode("utf-8", "replace") for p in r.stdout.split(b"\0") if p]
+
+
+def _find_trufflehog() -> str | None:
+    """Locate trufflehog: PATH first, then the go-install / user-local bin dirs.
+
+    Returns the resolved binary path, or None. Deliberately does NOT mutate
+    ``os.environ["PATH"]``: CPV's skillaudit ENV_INJECTION detector (persistence
+    class) flags an env write from a release script, and canon itself hit that
+    exact self-block on its own generator (upstream issue #231) — locating the
+    binary explicitly is the same capability without the env write.
+    """
+    found = shutil.which("trufflehog")
+    if found:
+        return found
+    for candidate in (
+        Path(os.environ.get("GOPATH", str(Path.home() / "go"))) / "bin" / "trufflehog",
+        Path.home() / ".local" / "bin" / "trufflehog",
+    ):
+        try:
+            if candidate.is_file():
+                return str(candidate)
+        except OSError:
+            continue
+    return None
+
+
+def stage_secret_scan(root: Path) -> None:
+    """Step 7: BLOCK the publish on any detected credential (canon CPV#217).
+
+    Placement is deliberate: this runs strictly BEFORE the bump/commit/tag/push,
+    so a detected credential aborts with the tree untouched. A gate that fired
+    after the push could not un-publish anything.
+
+    Cannot-check is NOT clean: a missing binary that cannot be installed, or an
+    unreadable file list, BLOCKS rather than passing, because "we never finished
+    looking" and "we looked and found nothing" must not produce the same verdict.
+    """
+    cprint(f"\n{BOLD}[7/17] Secret scan (trufflehog)...{NC}")
+    if os.environ.get("CPV_PUBLISH_SKIP_SECRET_SCAN") == "1":
+        cprint(f"  {RED}BLOCKED: CPV_PUBLISH_SKIP_SECRET_SCAN=1 — the secret scan has no bypass.{NC}")
+        cprint(f"  {RED}The pipeline enforces every check. Fix failures, do not skip them.{NC}")
+        sys.exit(1)
+
+    # trufflehog is a DEPENDENCY of this gate, not a precondition the user is
+    # asked to satisfy: canon installs it like every other external scanner
+    # (brew → `go install`). Only a FAILED install blocks: telling a publisher
+    # to go install something is a worse answer than installing it.
+    trufflehog_bin = _find_trufflehog()
+    if trufflehog_bin is None:
+        cprint("  trufflehog missing — installing it (the gate ships it as a dependency)...")
+        installed = False
+        brew = shutil.which("brew")
+        if brew:
+            try:
+                installed = (
+                    subprocess.run(
+                        [brew, "install", "trufflehog"],
+                        capture_output=True,
+                        text=True,
+                        timeout=600,
+                        check=False,
+                    ).returncode
+                    == 0
+                )
+            except (OSError, subprocess.SubprocessError):
+                installed = False
+        if not installed and shutil.which("go"):
+            try:
+                subprocess.run(
+                    ["go", "install", "github.com/trufflesecurity/trufflehog/v3@latest"],
+                    capture_output=True,
+                    text=True,
+                    timeout=600,
+                    check=False,
+                )
+            except (OSError, subprocess.SubprocessError):
+                pass
+        trufflehog_bin = _find_trufflehog()
+    if trufflehog_bin is None:
+        cprint(
+            f"  {RED}BLOCKED: trufflehog could not be installed — the release was NOT secret-scanned.{NC}"
+        )
+        cprint(f"  {RED}This is UNKNOWN, not clean, so the publish is blocked.{NC}")
+        cprint(f"  {YELLOW}Install it manually and re-run:  brew install trufflehog{NC}")
+        sys.exit(1)
+
+    scan_paths = _trufflehog_scan_paths(root)
+    if scan_paths is None:
+        cprint(f"  {RED}BLOCKED: could not enumerate git-tracked files — the scan cannot run honestly.{NC}")
+        sys.exit(1)
+
+    concurrency = max(1, os.cpu_count() or 4)
+    # --results widening (canon issue #219): the default bucket set OMITS
+    # `filtered_unverified` — where an expired, revoked, or unreachable-service
+    # credential lands. A committed credential is a leak whether or not a
+    # runner can reach its API, so ask for every bucket.
+    cmd = [
+        trufflehog_bin,
+        "filesystem",
+        "--json",
+        "--no-update",
+        "--fail",
+        "--results=verified,unknown,unverified,filtered_unverified",
+        f"--concurrency={concurrency}",
+        *scan_paths,
+    ]
+    try:
+        result = subprocess.run(
+            cmd,
+            cwd=str(root),
+            capture_output=True,
+            text=True,
+            timeout=1800,
+            check=False,
+        )
+    except subprocess.TimeoutExpired:
+        # A timed-out secret scan MUST NOT read as a clean one: "we never
+        # finished looking" is not "we looked and found nothing" (canon #218).
+        cprint(f"  {RED}BLOCKED: trufflehog timed out after 1800s — scan INCOMPLETE, secrets UNKNOWN.{NC}")
+        cprint(f"  {RED}Re-run with a narrower scan, or commit generated trees so they are scannable.{NC}")
+        sys.exit(1)
+    if result.returncode not in (0, 183):
+        # 183 = trufflehog's "findings found" exit with --fail; anything else
+        # is a scan that never reached a verdict.
+        cprint(f"  {RED}BLOCKED: trufflehog exited {result.returncode} — the scan did not complete.{NC}")
+        if result.stderr:
+            for line in result.stderr.strip().splitlines()[-5:]:
+                cprint(f"  {RED}    {line}{NC}")
+        sys.exit(1)
+
+    findings: list[dict[str, Any]] = []
+    for raw_line in (result.stdout or "").splitlines():
+        raw_line = raw_line.strip()
+        if not raw_line.startswith("{"):
+            continue
+        try:
+            finding = json.loads(raw_line)
+        except json.JSONDecodeError:
+            continue
+        if isinstance(finding, dict) and finding.get("SourceMetadata"):
+            findings.append(finding)
+    if not findings:
+        cprint(f"  {GREEN}No credentials detected (700+ verified-secret detectors clean).{NC}")
+        return
+
+    cprint(f"  {RED}BLOCKED: secret scan found {len(findings)} credential finding(s){NC}")
+    for f in findings[:20]:
+        detector = f.get("DetectorName") or f.get("detector") or "?"
+        verified = bool(f.get("Verified") or f.get("verified", False))
+        source_metadata = f.get("SourceMetadata", {}) or {}
+        data = source_metadata.get("Data", {}) if isinstance(source_metadata, dict) else {}
+        filesystem = data.get("Filesystem", {}) if isinstance(data, dict) else {}
+        rel = filesystem.get("file", "?") if isinstance(filesystem, dict) else "?"
+        line_no = filesystem.get("line", "?") if isinstance(filesystem, dict) else "?"
+        cprint(f"  {RED}  [{'VERIFIED' if verified else 'UNVERIFIED'}] {detector}: {rel}:{line_no}{NC}")
+    if len(findings) > 20:
+        cprint(f"  {RED}  ... and {len(findings) - 20} more{NC}")
+    cprint(
+        f"  {RED}Fix before publishing. Redaction is NOT this gate's job — a verified live "
+        f"credential must be ROTATED and purged from git history, not merely deleted "
+        f"from the working tree.{NC}"
+    )
+    sys.exit(1)
+
+
+# -- Fork-parity probe (canon Gate 3c, TRDD-4KQXN8ZW) ----------------------------
+#
+# `multiprocessing` defaults to fork on Linux and spawn on macOS, so a deadlock
+# caused by forking a multithreaded process is invisible to a developer on a Mac
+# and fatal in CI (the v3.23.0 class: a green 11,484-test local suite, then a
+# >300s timeout on Linux that failed CI and Release). This stage re-runs the
+# suite with the start method forced to fork, removing the platform asymmetry
+# before anything is bumped, committed, tagged or pushed.
+
+
+_FORK_PARITY_TIMEOUT_ENV = "PLUGIN_FORK_PARITY_TIMEOUT"
+# ~11x the 162s canon measured on its own suite. Generous on purpose: this
+# deadline exists to catch a DEADLOCK (unbounded), not to police a slow machine.
+_DEFAULT_FORK_PARITY_TIMEOUT = 1800.0
+
+
+def _fork_parity_timeout() -> float:
+    """Resolve the fork-parity deadline.
+
+    An empty, zero, negative, or unparseable value falls back to the default,
+    so a typo can never DISABLE the guard or set a near-zero ceiling that would
+    fail every publish.
+    """
+    raw = os.environ.get(_FORK_PARITY_TIMEOUT_ENV, "").strip()
+    if not raw:
+        return _DEFAULT_FORK_PARITY_TIMEOUT
+    try:
+        override = float(raw)
+    except ValueError:
+        return _DEFAULT_FORK_PARITY_TIMEOUT
+    return override if override > 0 else _DEFAULT_FORK_PARITY_TIMEOUT
+
+
+def stage_fork_parity(root: Path) -> None:
+    """Step 8: re-run the suite the way LINUX will run it.
+
+    PLACEMENT IS LOAD-BEARING: this runs strictly BEFORE the bump (step 10),
+    commit/tag/push (step 13), so a hang aborts with the tree untouched instead
+    of stranding a tag for a release that was never cut.
+
+    NEVER FALSE-BLOCKS. On Linux the ordinary run already forks, so the probe
+    reports "already-native" and skips rather than doubling CI. Where fork does
+    not exist (Windows) it degrades to a WARNING. It blocks ONLY when the probe
+    actually ran and the suite actually failed — but note a TIMEOUT *is* a
+    failure here, because a hang is this defect's signature, not an
+    inconclusive result.
+    """
+    cprint(f"\n{BOLD}[8/17] Linux fork-parity probe...{NC}")
+    if fork_parity_supported is None or run_under_linux_fork_default is None:
+        cprint(f"  {YELLOW}WARNING: scripts/cpv_fork_parity.py missing — probe SKIPPED.{NC}")
+        cprint(f"  {YELLOW}CI may still catch a fork deadlock that this run cannot see.{NC}")
+        return
+
+    runnable, reason = fork_parity_supported()
+    if not runnable:
+        # "cannot check" is reported as exactly that — never folded into a pass.
+        cprint(f"  {YELLOW}Skipped: {reason}{NC}")
+        return
+
+    cmd = ["uv", "run", "pytest", "tests/", "-q", "--tb=short"]
+    timeout = _fork_parity_timeout()
+    cprint(f"  {reason}; deadline {timeout:.0f}s")
+    result = run_under_linux_fork_default(cmd, root, timeout=timeout)
+
+    if result.blocked:
+        cprint(f"  {RED}BLOCKED: fork-parity probe FAILED — {result.detail}{NC}")
+        cprint(f"  {RED}This is what Linux CI would do to this commit. A HANG here means something{NC}")
+        cprint(f"  {RED}forks a multithreaded process.{NC}")
+        tail = "\n".join(result.output.splitlines()[-25:])
+        if tail:
+            cprint(tail)
+        sys.exit(1)
+
+    cprint(f"  {GREEN}Suite passes under the Linux fork default.{NC}")
+
+
 def stage_consistency(root: Path) -> None:
-    """Step 6: Check version consistency."""
-    cprint(f"\n{BOLD}[6/11] Checking version consistency...{NC}")
+    """Step 6→9 (renumbered): Check version consistency."""
+    cprint(f"\n{BOLD}[9/17] Checking version consistency...{NC}")
     ok, msg = check_version_consistency(root)
     cprint(f"  {msg}")
     if not ok:
@@ -1623,6 +1958,91 @@ def _local_tag_exists(root: Path, tag: str) -> bool:
     return r.returncode == 0
 
 
+def _remote_tag_state(root: Path, tag: str) -> bool | None:
+    """Three-valued remote-tag probe (canon issue #216, TRDD-6UW0KZVY shape).
+
+    Returns:
+      True  — ls-remote SUCCEEDED and the tag exists on origin.
+      False — ls-remote SUCCEEDED and the tag does not exist (a real answer:
+              first-publish and the pre-push recovery both rely on it).
+      None  — the remote could NOT be read (non-zero exit / timeout). This is
+              NOT "no tags": collapsing it into False made the destructive
+              recovery branches act on a question the remote never answered —
+              re-pointing a tag that may already be published.
+    """
+    try:
+        result = subprocess.run(
+            ["git", "ls-remote", "--tags", "origin", f"refs/tags/{tag}"],
+            capture_output=True,
+            text=True,
+            cwd=str(root),
+            check=False,
+            timeout=30,
+        )
+    except subprocess.TimeoutExpired:
+        return None
+    if result.returncode != 0:
+        return None
+    return bool(result.stdout.strip())
+
+
+def _ensure_tag_at_head(root: Path, tag: str, message: str) -> bool:
+    """Guarantee `tag` exists AND points at HEAD, or refuse (canon issue #216).
+
+    After a publish that died between tagging and the push, the retry's
+    recovery saw the tag already present and skipped re-tagging, then pushed
+    HEAD plus the OLD tag: every commit made between the attempts — typically
+    the very fix that made the retry pass — landed on the branch but OUTSIDE
+    the released tag, so the release archive differed from the tree the gates
+    had just validated.
+
+    Fail-closed: the tag is moved ONLY on the remote's positive answer that it
+    is unpushed. A tag already on origin is immutable here, and an unreachable
+    remote is not consent.
+
+    Returns True when the tag is correct (created, moved, or already at HEAD),
+    False when the caller must abort.
+    """
+    if not _local_tag_exists(root, tag):
+        run(["git", "tag", "-a", tag, "-m", message], cwd=root)
+        cprint(f"  {GREEN}Tag {tag} created{NC}")
+        return True
+
+    tag_sha = run(["git", "rev-list", "-n", "1", tag], cwd=root, check=False, capture=True).stdout.strip()
+    head_sha = run(["git", "rev-parse", "HEAD"], cwd=root, check=False, capture=True).stdout.strip()
+    if not (tag_sha and head_sha) or tag_sha == head_sha:
+        # Already correct, or the shas are unreadable — the latter is the
+        # pre-existing behaviour and is safe: nothing is moved on a guess.
+        cprint(f"  {GREEN}Tag {tag} already present at HEAD{NC}")
+        return True
+
+    remote_state = _remote_tag_state(root, tag)
+    if remote_state is None:
+        cprint(
+            f"  {RED}Local tag {tag} points at {tag_sha[:8]} (HEAD {head_sha[:8]}) "
+            f"and origin's tags cannot be read (ls-remote failed). Refusing to move "
+            f"the tag: that is only safe when the remote confirms it is unpushed. "
+            f"Re-run once the remote is reachable.{NC}"
+        )
+        return False
+    if remote_state is True:
+        cprint(
+            f"  {RED}Local tag {tag} points at {tag_sha[:8]} but HEAD is "
+            f"{head_sha[:8]}, and the tag is ALREADY ON ORIGIN. Refusing to move a "
+            f"published tag. Bump to a new version instead.{NC}"
+        )
+        return False
+
+    cprint(
+        f"  {YELLOW}Local tag {tag} points at {tag_sha[:8]}, HEAD is at "
+        f"{head_sha[:8]}. Tag is unpushed; moving it to HEAD.{NC}"
+    )
+    run(["git", "tag", "-d", tag], cwd=root)
+    run(["git", "tag", "-a", tag, "-m", message], cwd=root)
+    cprint(f"  {GREEN}Tag {tag} re-created at HEAD{NC}")
+    return True
+
+
 def _plugin_name(root: Path) -> str | None:
     """Read the plugin name from .claude-plugin/plugin.json."""
     pj = root / ".claude-plugin" / "plugin.json"
@@ -1650,7 +2070,7 @@ def _dependency_tag_name(root: Path, new_ver: str) -> str | None:
 
 
 def stage_bump(root: Path, new_ver: str, dry_run: bool) -> None:
-    """Step 7: Bump version. Idempotent — skips when local already matches target.
+    """Step 7→10 (renumbered): Bump version. Idempotent — skips when local already matches target.
 
     Recovery semantics: when a previous publish was interrupted between the
     local commit+tag and the push (transient network failure during git push,
@@ -1661,7 +2081,7 @@ def stage_bump(root: Path, new_ver: str, dry_run: bool) -> None:
     local-vs-remote delta, and skip the bump entirely when local already
     matches the target.
     """
-    cprint(f"\n{BOLD}[7/11] Bumping version...{NC}")
+    cprint(f"\n{BOLD}[10/17] Bumping version...{NC}")
     current = get_current_version(root)
     remote = _read_remote_version(root)
     if remote and current and current == new_ver:
@@ -1684,7 +2104,7 @@ def stage_bump(root: Path, new_ver: str, dry_run: bool) -> None:
 
 
 def stage_update_badges(root: Path, old_ver: str, new_ver: str, dry_run: bool) -> None:
-    """Step 8: Replace version badge in README.md.
+    """Step 8→11 (renumbered): Replace version badge in README.md.
 
     Strategy:
       1. Try exact-string substitution `version-<old>-blue` → `version-<new>-blue`
@@ -1695,7 +2115,7 @@ def stage_update_badges(root: Path, old_ver: str, new_ver: str, dry_run: bool) -
       3. Emit a WARNING (not silent skip) when no badge is found at all so the
          author notices the README has no shields.io version badge to update.
     """
-    cprint(f"\n{BOLD}[8/11] Updating README badge...{NC}")
+    cprint(f"\n{BOLD}[11/17] Updating README badge...{NC}")
     readme = root / "README.md"
     if not readme.exists():
         cprint(f"  {YELLOW}WARNING: no README.md — skipping badge update.{NC}")
@@ -1787,7 +2207,7 @@ def detect_bump_type(root: Path) -> str:
 
 
 def stage_changelog(root: Path, new_ver: str, dry_run: bool) -> None:
-    """Step 9: Generate CHANGELOG.md with git-cliff using the bumped tag.
+    """Step 9→12 (renumbered): Generate CHANGELOG.md with git-cliff using the bumped tag.
 
         git cliff --bump --tag v<NEXT> -o CHANGELOG.md
 
@@ -1806,7 +2226,7 @@ def stage_changelog(root: Path, new_ver: str, dry_run: bool) -> None:
     "restore" the flag because git-cliff docs pair it with `--bump` — that
     documented-looking pairing is exactly how the bug survived review 3 times.
     """
-    cprint(f"\n{BOLD}[9/11] Generating changelog (git-cliff)...{NC}")
+    cprint(f"\n{BOLD}[12/17] Generating changelog (git-cliff)...{NC}")
     if not shutil.which("git-cliff"):
         cprint(f"  {YELLOW}git-cliff not installed — skipping changelog.{NC}")
         return
@@ -1841,19 +2261,78 @@ def stage_changelog(root: Path, new_ver: str, dry_run: bool) -> None:
     cprint(f"  {GREEN}CHANGELOG.md updated with {tag}.{NC}")
 
 
+def stage_release_changes(root: Path) -> None:
+    """Stage the release commit WITHOUT absorbing untracked files (canon issue #186).
+
+    `git add -A` stages untracked files too. At release time a plugin tree
+    routinely holds `reports/` (which "routinely contain private data —
+    absolute paths, usernames, internal hostnames, tokens caught in logs"),
+    local scratch, editor artifacts, and whatever a failed earlier run left
+    behind. A release commit is the WORST place for an accidental inclusion:
+    it is pushed to a public repo and it is also the artifact users install.
+
+    Staging tracked modifications only is safe HERE specifically because step 1
+    already required a clean tree: everything legitimate is committed by the
+    time this runs, so the only files this pipeline itself creates are the
+    generated ones enumerated below. Anything else untracked at this point is,
+    by construction, not part of the release.
+
+    The failure mode is deliberately "the release did not include your new
+    file, here it is by name" rather than "the release published your scratch
+    directory" — the first is a loud, cheap fix; the second is permanent.
+    """
+    run(["git", "add", "-u"], cwd=root)
+
+    # Files this pipeline generates. They are normally already tracked, but a
+    # first-ever CHANGELOG.md (or a plugin adopting this pipeline) can be new —
+    # so name them explicitly rather than reaching for `-A`. Only existing
+    # paths are staged; a missing one is not an error.
+    for rel in (
+        ".claude-plugin/plugin.json",
+        ".claude-plugin/marketplace.json",
+        "CHANGELOG.md",
+        "README.md",
+        "pyproject.toml",
+        "uv.lock",
+    ):
+        if (root / rel).exists():
+            run(["git", "add", "--", rel], cwd=root)
+
+    # Surface whatever is left untracked instead of silently absorbing it.
+    res = subprocess.run(
+        ["git", "status", "--porcelain"],
+        cwd=str(root),
+        capture_output=True,
+        text=True,
+        check=False,
+        timeout=60,
+    )
+    stray = [ln[3:].strip() for ln in res.stdout.splitlines() if ln.startswith("??")]
+    if stray:
+        cprint(f"  {YELLOW}NOT staged — untracked files are never swept into a release commit (#186):{NC}")
+        for path in stray[:20]:
+            cprint(f"  {YELLOW}    ?? {path}{NC}")
+        if len(stray) > 20:
+            cprint(f"  {YELLOW}    ... and {len(stray) - 20} more{NC}")
+        cprint(f"  {YELLOW}If one of these belongs in the release, `git add` it BY NAME and re-run.{NC}")
+
+
 def stage_commit_and_push(root: Path, new_ver: str, dry_run: bool) -> None:
-    """Step 10: Commit, tag, push. Idempotent on commit + tag.
+    """Step 10→13 (renumbered): Commit, tag, push. Idempotent on commit + tag.
 
     Idempotency: if HEAD's subject is already `chore: bump version to <new_ver>`
     AND the working tree is clean, skip the commit step (interrupted-publish
-    recovery). If the tag already exists locally, skip the tag step. The push
-    always runs — that is what brings the remote into sync.
+    recovery). If the tag already exists locally, `_ensure_tag_at_head` still
+    verifies it points at HEAD — a tag left stale by an interrupted publish is
+    re-pointed only when the remote positively confirms it was never pushed
+    (canon issue #216). The push always runs — that is what brings the remote
+    into sync.
 
     TRDD-bbff5bc5 §5: gh-auth precheck runs BEFORE the first push so the
     user gets an actionable error if their gh CLI is unauthed/lacks push
     perm — instead of an opaque git push failure mid-pipeline.
     """
-    cprint(f"\n{BOLD}[10/11] Committing and pushing...{NC}")
+    cprint(f"\n{BOLD}[13/17] Committing and pushing...{NC}")
     tag = f"v{new_ver}"
     # The DEPENDENCY-RESOLUTION tag. Since Claude Code 2.1.110 a version-constrained
     # dependency ({"name": "<plugin>", "version": ">=1.2"}) is resolved by listing this
@@ -1899,13 +2378,20 @@ def stage_commit_and_push(root: Path, new_ver: str, dry_run: bool) -> None:
             f"skipping commit (interrupted-publish recovery).{NC}"
         )
     else:
-        run(["git", "add", "-A"], cwd=root)
+        # NEVER `git add -A` (canon issue #186; also the maintainer's standing
+        # rule): untracked scratch and reports must never be swept into a
+        # release commit that gets pushed and installed.
+        stage_release_changes(root)
         run(["git", "commit", "-m", expected_subject], cwd=root)
 
-    if tag_exists:
-        cprint(f"  {YELLOW}Tag {tag} already exists locally — skipping tag step.{NC}")
-    else:
-        run(["git", "tag", "-a", tag, "-m", f"Release {tag}"], cwd=root)
+    # `_ensure_tag_at_head` (canon issue #216): a pre-existing tag must point
+    # at HEAD, not merely exist — otherwise the retry after an interrupted
+    # publish pushes HEAD plus the OLD tag and the release archive differs
+    # from the tree the gates just validated. The helper refuses to move a tag
+    # already on origin (published tags are immutable) and refuses when the
+    # remote cannot be read.
+    if not _ensure_tag_at_head(root, tag, f"Release {tag}"):
+        sys.exit(1)
 
     if dep_tag is None:
         # Warn loudly rather than silently omitting it: a silent skip is precisely how
@@ -1915,10 +2401,8 @@ def stage_commit_and_push(root: Path, new_ver: str, dry_run: bool) -> None:
             f".claude-plugin/plugin.json - SKIPPING the dependency tag. Dependent "
             f"plugins will fail to resolve this release with `no-matching-tag`.{NC}"
         )
-    elif dep_tag_exists:
-        cprint(f"  {YELLOW}Tag {dep_tag} already exists locally — skipping.{NC}")
-    else:
-        run(["git", "tag", "-a", dep_tag, "-m", f"{_plugin_name(root)} {new_ver}"], cwd=root)
+    elif not _ensure_tag_at_head(root, dep_tag, f"{_plugin_name(root)} {new_ver}"):
+        sys.exit(1)
 
     # gh-auth precheck — fail fast with actionable error if gh missing/unauthed.
     owner, repo = _resolve_owner_repo(root)
@@ -1937,10 +2421,17 @@ def stage_commit_and_push(root: Path, new_ver: str, dry_run: bool) -> None:
     # permanent and the 60-attempt retry budget silently collapsed to 1 attempt
     # (TRDD-E0NETVRP). Capturing swallows git's error text into the exception,
     # so echo it before failing fast — a mute push failure is undiagnosable.
+    #
+    # timeout + max_attempts (canon issue #224): the pre-push hook runs INSIDE
+    # this call's wall clock (it re-runs the validator and the whole test
+    # suite), so the timeout must cover the hook's budget, not just the wire
+    # transfer — _PUSH_TIMEOUT_SEC is computed from exactly that budget.
     try:
         git_with_retry(
             ["git", "push", "--atomic", "origin", *push_refs],
             cwd=str(root),
+            timeout=_PUSH_TIMEOUT_SEC,
+            max_attempts=_PUSH_MAX_ATTEMPTS,
         )
     except subprocess.CalledProcessError as e:
         if e.stderr:
@@ -1951,13 +2442,13 @@ def stage_commit_and_push(root: Path, new_ver: str, dry_run: bool) -> None:
 
 
 def stage_gh_release(root: Path, new_ver: str, dry_run: bool) -> None:
-    """Step 11: Create GitHub release via gh CLI.
+    """Step 11→14 (renumbered): Create GitHub release via gh CLI.
 
     TRDD-bbff5bc5 §5: re-runs the gh-auth precheck before `gh release
     create` so an auth state change between gates 10 and 11 (token
     revoked, account switched) surfaces as an actionable error.
     """
-    cprint(f"\n{BOLD}[11/11] Creating GitHub release...{NC}")
+    cprint(f"\n{BOLD}[14/17] Creating GitHub release...{NC}")
     tag = f"v{new_ver}"
     if not shutil.which("gh"):
         cprint(f"  {YELLOW}gh CLI not installed — skipping release.{NC}")
@@ -2045,6 +2536,436 @@ def stage_gh_release(root: Path, new_ver: str, dry_run: bool) -> None:
     cprint(f"  {RED}Failed to create release (exit code {result.returncode}).{NC}")
     cprint(f"  {RED}  The tag {tag} is pushed; create the release manually or re-run after fixing the cause.{NC}")
     sys.exit(1)
+
+
+# -- Post-release reporters -----------------------------------------------------
+#
+# Both stages run AFTER the release on purpose: they verify the commit that
+# actually shipped, by which point a non-zero exit could not un-ship anything —
+# it would only abort the pipeline *after* the irreversible step, losing the
+# report that is the whole point. Neither folds "cannot check" into a pass:
+# every skip names its reason.
+
+
+def _resolve_marketplace_name(root: Path) -> str | None:
+    """The marketplace NAME Claude Code installs by (``<plugin>@<name>``).
+
+    Layout A resolves the remote marketplace repo from notify-marketplace.yml
+    and reads its manifest from GitHub via `gh api`; Layout B reads the parent
+    marketplace directly. Anything unresolvable returns None, which makes the
+    smoke test SKIP with a reason — never guess a marketplace name, because
+    installing from the wrong one would prove nothing. (The fetch reuses
+    `_fetch_remote_marketplace_json` rather than urllib: bandit B310 blocks a
+    release gate that urlopen's a URL assembled from manifest strings, and gh
+    already owns the auth/transport layer.)
+    """
+    layout, details = _detect_layout(root)
+    if layout == "B":
+        mp_root = details.get("marketplace_root")
+        if isinstance(mp_root, Path):
+            try:
+                data = json.loads((mp_root / ".claude-plugin" / "marketplace.json").read_text(encoding="utf-8"))
+            except (OSError, ValueError):
+                return None
+            name = data.get("name") if isinstance(data, dict) else None
+            return name if isinstance(name, str) and name else None
+        return None
+    if layout == "A":
+        owner = details.get("mkt_owner")
+        repo = details.get("mkt_repo")
+        if not (isinstance(owner, str) and isinstance(repo, str)):
+            return None
+        data = _fetch_remote_marketplace_json(owner, repo)
+        if not isinstance(data, dict):
+            return None
+        name = data.get("name")
+        return name if isinstance(name, str) and name else None
+    return None
+
+
+_SEMVER_RE = re.compile(r"\bv?(\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.\-]+)?)\b")
+
+# The CLI's own wording when a plugin cannot be resolved inside a marketplace.
+# Matching the SHAPE rather than one exact sentence, because this only ever
+# gates a DOWNGRADE that is additionally proven by _marketplace_is_registered.
+_NOT_IN_MARKETPLACE_RE = re.compile(
+    r"not found in marketplace|marketplace .*not found|marketplace update",
+    re.IGNORECASE,
+)
+
+
+def _marketplace_is_registered(claude_bin: str, marketplace: str) -> bool:
+    """True when `marketplace` appears in `claude plugin marketplace list`.
+
+    READ-ONLY on purpose: running `marketplace add` to make the smoke test pass
+    would mutate the user's global registry as a side effect of publishing.
+
+    FAIL-SAFE towards the HARD FAILURE: any inability to answer (CLI error,
+    timeout, unreadable output) returns True, i.e. "assume registered", so a
+    genuinely uninstallable release is never downgraded to SKIPPED by a probe
+    that simply could not run.
+    """
+    try:
+        listing = subprocess.run(
+            [claude_bin, "plugin", "marketplace", "list"],
+            capture_output=True,
+            text=True,
+            timeout=60,
+            check=False,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return True
+    if listing.returncode != 0:
+        return True
+    return marketplace in ((listing.stdout or "") + (listing.stderr or ""))
+
+
+def _semvers_in(text: str) -> list[str]:
+    """Every semver-shaped token in `text`, in order, without the leading v."""
+    return _SEMVER_RE.findall(text)
+
+
+def stage_install_smoke(root: Path, new_ver: str) -> None:
+    """Step 16: prove the just-published release actually INSTALLS (canon Gate 15).
+
+    ai-maestro#62 R2, filed after eleven plugins each published green and were
+    all uninstallable: static validation cannot catch it (the manifest was
+    valid, the tags existed, the marketplace entry was correct) — only an
+    install can. This installs the plugin from its marketplace into a clean
+    temp directory.
+
+    Position and verdict mirror the CI-verify reporter: it must run after the
+    release (nothing to install before it), by which point a non-zero exit
+    could not un-ship anything. So the DEFAULT is a loud report, not a failed
+    run. Setting ``CPV_PUBLISH_REQUIRE_INSTALL_SMOKE=1`` makes a genuine
+    install FAILURE exit non-zero, for fleets that want the pipeline to go red.
+
+    Cannot-check is never reported as clean: a missing ``claude`` CLI (the
+    normal case on a CI runner), an unresolvable marketplace, or a timeout all
+    report SKIPPED with the reason, and never count as a pass.
+    """
+    cprint(f"\n{BOLD}[16/17] Install smoke test...{NC}")
+    if os.environ.get("CPV_PUBLISH_SKIP_INSTALL_SMOKE") == "1":
+        cprint(f"  {YELLOW}SKIPPED — CPV_PUBLISH_SKIP_INSTALL_SMOKE=1{NC}")
+        return
+    strict = os.environ.get("CPV_PUBLISH_REQUIRE_INSTALL_SMOKE") == "1"
+    claude_bin = shutil.which("claude")
+    if claude_bin is None:
+        cprint(f"  {YELLOW}SKIPPED — the `claude` CLI is not on PATH (normal on a CI runner).{NC}")
+        cprint(f"  {YELLOW}This is NOT a pass: the release was not proven installable here.{NC}")
+        return
+    plugin_name = _plugin_name(root)
+    marketplace = _resolve_marketplace_name(root)
+    if not (plugin_name and marketplace):
+        cprint(f"  {YELLOW}SKIPPED — could not resolve <plugin>@<marketplace> (name={plugin_name!r},{NC}")
+        cprint(f"  {YELLOW}marketplace={marketplace!r}). Not a pass — nothing was installed.{NC}")
+        return
+    target = f"{plugin_name}@{marketplace}"
+    with tempfile.TemporaryDirectory(prefix="publish-install-smoke-") as tmp:
+        cprint(f"  {BLUE}$ (cd {tmp} && claude plugin install {target} --scope local){NC}")
+        try:
+            result = subprocess.run(
+                [claude_bin, "plugin", "install", target, "--scope", "local"],
+                cwd=tmp,
+                capture_output=True,
+                text=True,
+                timeout=300,
+                check=False,
+            )
+        except (OSError, subprocess.SubprocessError) as exc:
+            cprint(f"  {YELLOW}SKIPPED — the install could not be run ({exc}). Not a pass.{NC}")
+            return
+        # Put back what we took. `--scope local` scopes only the SETTINGS file
+        # (written into this temp dir, which is about to vanish) — the plugin
+        # payload and its marketplace registration land in shared ~/.claude
+        # state, so without this every publish left another cached copy behind.
+        # `--scope local` + `--keep-data` are BOTH load-bearing safety, not
+        # tidiness: the author of the plugin being published almost certainly
+        # has it installed at USER scope, and a wider uninstall — or one that
+        # dropped ~/.claude/plugins/data/{id}/ — would destroy their real
+        # installation. Cleanup runs on EVERY path where the install was
+        # invoked, not only on rc == 0. Best-effort by design: a cleanup
+        # failure is reported, never fatal, and never changes the verdict.
+        try:
+            subprocess.run(
+                [claude_bin, "plugin", "uninstall", target, "--scope", "local", "--keep-data", "-y"],
+                cwd=tmp,
+                capture_output=True,
+                text=True,
+                timeout=120,
+                check=False,
+            )
+        except (OSError, subprocess.SubprocessError) as exc:
+            cprint(f"  {YELLOW}Note: smoke-install cleanup did not run ({exc}).{NC}")
+    if result.returncode == 0:
+        cprint(f"  {GREEN}{target} installs cleanly (dependencies resolved).{NC}")
+        # The marketplace entry is updated ASYNCHRONOUSLY (notify-marketplace
+        # dispatch), so right after a release the resolved version may still be
+        # the previous one. That is a lag, NOT an install failure. Claim a lag
+        # only from a version we actually read in the install output — the
+        # progress line does not always print the semver.
+        resolved = _semvers_in(result.stdout or "")
+        if resolved and new_ver not in resolved:
+            cprint(
+                f"  {YELLOW}Note: the marketplace resolved v{resolved[0]}, not v{new_ver} "
+                f"(async notify lag) — installability is proven, the version listing lags.{NC}"
+            )
+        return
+    combined = (result.stderr or "") + "\n" + (result.stdout or "")
+    # Disambiguate "this host never registered the marketplace" (an environment
+    # gap — cannot check) from "the marketplace is registered and does not carry
+    # this plugin" (a REAL uninstallable release). Both produce the same
+    # not-found message. FAIL-SAFE: only a marketplace we can PROVE is
+    # unregistered downgrades to SKIPPED; if the probe cannot answer, the hard
+    # failure stands.
+    if _NOT_IN_MARKETPLACE_RE.search(combined) and not _marketplace_is_registered(claude_bin, marketplace):
+        cprint(f"  {YELLOW}SKIPPED — the marketplace {marketplace!r} is not registered on this host,{NC}")
+        cprint(f"  {YELLOW}so `claude plugin install` could not resolve {target} here. Not a pass:{NC}")
+        cprint(f"  {YELLOW}the release was not proven installable. Register it with{NC}")
+        cprint(f"  {YELLOW}`claude plugin marketplace add <source>` and re-run to get a real verdict.{NC}")
+        return
+    tail = combined.strip().splitlines()[-8:]
+    cprint(f"  {RED}========================================{NC}")
+    cprint(f"  {RED}RELEASE IS NOT INSTALLABLE: {target}{NC}")
+    cprint(f"  {RED}The release is already public — fix forward with a new release.{NC}")
+    for ln in tail:
+        cprint(f"  {RED}    {ln}{NC}")
+    cprint(f"  {RED}Reproduce: cd $(mktemp -d) && claude plugin install {target} --scope local{NC}")
+    cprint(f"  {RED}========================================{NC}")
+    if strict:
+        cprint(f"  {RED}CPV_PUBLISH_REQUIRE_INSTALL_SMOKE=1 — failing the publish run.{NC}")
+        sys.exit(1)
+
+
+def classify_ci_runs(runs: list[dict[str, Any]], successors: dict[str, bool]) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    """Split completed CI runs for one commit into (failed, unknown).
+
+    A `success`/`skipped`/`neutral` conclusion is fine and appears in neither
+    list. Any OTHER conclusion is a genuine failure — EXCEPT `cancelled`,
+    which GitHub's concurrency-group cancellation reports for a run that was
+    merely SUPERSEDED by a newer push to the same branch (canon issue #220).
+    `successors` disambiguates: it maps a cancelled run's workflow NAME to
+    whether a newer run of that same workflow exists on a commit descended
+    from the one being verified. Found => the cancellation was benign
+    supersession, excluded from both lists. Not found => we cannot tell a
+    genuine user-cancel from a lost successor, so it goes to `unknown` and the
+    reporter must say UNKNOWN, never green — a "cannot check" result is never
+    folded into a pass.
+    """
+    failed: list[dict[str, Any]] = []
+    unknown: list[dict[str, Any]] = []
+    for r in runs:
+        conclusion = r.get("conclusion")
+        if conclusion in ("success", "skipped", "neutral"):
+            continue
+        if conclusion == "cancelled":
+            if successors.get(str(r.get("name", "?"))):
+                continue
+            unknown.append(r)
+            continue
+        failed.append(r)
+    return failed, unknown
+
+
+def _resolve_ci_run_successors(
+    gh_bin: str,
+    root: Path,
+    sha: str,
+    cancelled_runs: list[dict[str, Any]],
+    deadline: float | None = None,
+) -> dict[str, bool]:
+    """For each cancelled run, look for a newer descendant-commit successor.
+
+    A `cancelled` run counts as superseded-not-failed only when a LATER run of
+    the SAME workflow exists on a commit that is a git descendant of `sha`.
+    Any failure to determine that leaves that workflow's entry absent from the
+    returned map, which `classify_ci_runs` treats as "no successor found" —
+    fail toward UNKNOWN, never toward green.
+
+    BOUNDED AS A PHASE: each `gh run list` carries 120s and each
+    `git merge-base` 30s, but with N cancelled runs x up to 20 candidates that
+    multiplies out; one shared deadline caps the whole phase, and expiry leaves
+    the remaining workflows unresolved (rendered as UNKNOWN).
+    """
+    result: dict[str, bool] = {}
+    for r in cancelled_runs:
+        name = str(r.get("name", "?"))
+        if name in result:
+            continue
+        if deadline is not None and time.monotonic() >= deadline:
+            cprint(f"  {YELLOW}successor resolution: out of time — remaining cancelled run(s) stay UNKNOWN.{NC}")
+            break
+        branch = r.get("headBranch")
+        if not branch:
+            continue
+        try:
+            listed = subprocess.run(
+                [
+                    gh_bin,
+                    "run",
+                    "list",
+                    "--workflow",
+                    name,
+                    "--branch",
+                    str(branch),
+                    "--limit",
+                    "20",
+                    "--json",
+                    "headSha,conclusion,status,createdAt",
+                ],
+                cwd=str(root),
+                capture_output=True,
+                text=True,
+                timeout=120,
+            )
+        except (OSError, subprocess.TimeoutExpired):
+            continue
+        if listed.returncode != 0:
+            continue
+        try:
+            candidates = json.loads(listed.stdout or "[]")
+        except json.JSONDecodeError:
+            continue
+        for c in candidates:
+            candidate_sha = c.get("headSha")
+            if not candidate_sha or candidate_sha == sha:
+                continue
+            try:
+                ancestry = subprocess.run(
+                    ["git", "merge-base", "--is-ancestor", sha, candidate_sha],
+                    cwd=str(root),
+                    capture_output=True,
+                    timeout=30,
+                )
+            except (OSError, subprocess.TimeoutExpired):
+                continue
+            if ancestry.returncode == 0:
+                result[name] = True
+                break
+    return result
+
+
+def stage_verify_ci_green(root: Path, timeout_s: int = _CI_VERIFY_DEFAULT_TIMEOUT_S) -> None:
+    """Step 15: confirm CI went GREEN on the commit that was just released.
+
+    WHY THIS STAGE EXISTS. The release push targets the default branch directly,
+    and the branch ruleset grants the maintainer role a bypass — so GitHub lets
+    the push through and the required checks never actually gate anything: the
+    tag, the release and the marketplace notification are all public before CI
+    has said a word. Until this stage existed, "CI must be green" lived only in
+    prose — and prose is skippable.
+
+    NON-BLOCKING BY CONSTRUCTION, and that is a deliberate asymmetry rather
+    than a weak gate: by the time this runs the release is already published,
+    so returning non-zero could not un-ship anything — it would only abort the
+    pipeline *after* the irreversible step, losing the report that is the whole
+    point. A RED result is therefore surfaced as a loud, explicit failure notice
+    that names the failing runs and the exact follow-up command.
+
+    "Cannot check" is never reported as green: no gh, no network, no runs
+    found, or a timeout are each reported as UNVERIFIED with the reason, never
+    folded into a pass.
+    """
+    cprint(f"\n{BOLD}[15/17] Verify CI is green on the released commit...{NC}")
+
+    gh_bin = shutil.which("gh")
+    if gh_bin is None:
+        cprint(f"  {YELLOW}UNVERIFIED — gh CLI not installed, cannot check CI.{NC}")
+        cprint(f"  {YELLOW}The release IS published; verify manually before relying on it.{NC}")
+        return
+
+    try:
+        head = subprocess.run(
+            ["git", "rev-parse", "HEAD"],
+            cwd=str(root),
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        cprint(f"  {YELLOW}UNVERIFIED — could not resolve HEAD ({exc}).{NC}")
+        return
+    if head.returncode != 0:
+        cprint(f"  {YELLOW}UNVERIFIED — could not resolve HEAD.{NC}")
+        return
+    sha = head.stdout.strip()
+
+    deadline = time.monotonic() + timeout_s
+    poll_s = 15
+    runs: list[dict[str, Any]] = []
+    while True:
+        try:
+            listed = subprocess.run(
+                [gh_bin, "run", "list", "--commit", sha, "--limit", "20", "--json", "name,status,conclusion,headBranch"],
+                cwd=str(root),
+                capture_output=True,
+                text=True,
+                timeout=120,
+            )
+        except (OSError, subprocess.TimeoutExpired) as exc:
+            cprint(f"  {YELLOW}UNVERIFIED — `gh run list` failed ({exc}).{NC}")
+            return
+        if listed.returncode != 0:
+            cprint(f"  {YELLOW}UNVERIFIED — `gh run list` exited {listed.returncode}: {listed.stderr.strip()[:200]}{NC}")
+            return
+        try:
+            runs = json.loads(listed.stdout or "[]")
+        except json.JSONDecodeError:
+            cprint(f"  {YELLOW}UNVERIFIED — unparseable `gh run list` output.{NC}")
+            return
+        if not runs:
+            # A workflow can take a few seconds to register after the push.
+            if time.monotonic() >= deadline:
+                cprint(f"  {YELLOW}UNVERIFIED — no CI runs found for {sha[:8]} within {timeout_s}s.{NC}")
+                return
+            time.sleep(poll_s)
+            continue
+        pending = [r for r in runs if r.get("status") != "completed"]
+        if not pending:
+            break
+        if time.monotonic() >= deadline:
+            names = ", ".join(sorted({str(r.get("name", "?")) for r in pending}))
+            # The hint carries the FULL sha: `gh run list --commit` with an
+            # abbreviated sha silently matches nothing and exits 0.
+            cprint(f"  {YELLOW}UNVERIFIED — still running after {timeout_s}s: {names}.{NC}")
+            cprint(f"  {YELLOW}Check with: gh run list --commit {sha}{NC}")
+            return
+        time.sleep(poll_s)
+
+    # A conclusion of `skipped`/`neutral` is not a failure. A `cancelled` run
+    # is not automatically a failure either (canon issue #220): the concurrency
+    # group cancels a run that a newer push to the same branch superseded,
+    # which looks identical to a genuine user-cancel unless we go find that
+    # newer run ourselves.
+    cancelled_runs = [r for r in runs if r.get("conclusion") == "cancelled"]
+    successors = (
+        _resolve_ci_run_successors(gh_bin, root, sha, cancelled_runs, deadline=deadline) if cancelled_runs else {}
+    )
+    failed, unknown = classify_ci_runs(runs, successors)
+    if failed:
+        detail = ", ".join(f"{r.get('name', '?')}={r.get('conclusion')}" for r in failed)
+        # Follow-up commands must be pasteable as written: `gh run view` has NO
+        # --commit flag (that flag belongs to `gh run list`), so the hint is a
+        # two-step with the FULL sha, then the run id.
+        cprint(f"  {RED}[advisory] CI RED on the released commit {sha[:8]}: {detail}{NC}")
+        cprint(f"  {RED}  (advisory — this reporter never changes the exit code; the release{NC}")
+        cprint(f"  {RED}  is already shipped){NC}")
+        cprint(f"  {RED}  The release v-tag and GitHub release are ALREADY PUBLISHED — the{NC}")
+        cprint(f"  {RED}  ruleset bypass meant no required check gated them. Fix the cause and{NC}")
+        cprint(f"  {RED}  publish a follow-up patch; do NOT mute the check.{NC}")
+        cprint(f"  {RED}Logs: gh run list --commit {sha}{NC}")
+        cprint(f"  {RED}      then: gh run view --log-failed <run-id>{NC}")
+        return
+
+    if unknown:
+        names = ", ".join(sorted({str(r.get("name", "?")) for r in unknown}))
+        cprint(f"  {YELLOW}CI verdict UNKNOWN on {sha[:8]}: run cancelled and no successor found ({names}).{NC}")
+        cprint(f"  {YELLOW}This is either a genuine user-cancel or a superseding run we could not{NC}")
+        cprint(f"  {YELLOW}resolve. Verify manually: gh run list --commit {sha}{NC}")
+        return
+
+    names = ", ".join(sorted({str(r.get("name", "?")) for r in runs}))
+    cprint(f"  {GREEN}CI green on {sha[:8]} ({names}).{NC}")
 
 
 # -- Main ----------------------------------------------------------------------
@@ -2143,15 +3064,17 @@ def main() -> int:
     # Gate 0: reject bypass attempts BEFORE running any other stage.
     # Pipeline order (per the cornerstone rule "every push is a bump"):
     #   lint+typecheck → tests → validate → ci-preflight → marketplace-reg →
-    #   consistency → bump → badge → changelog → commit → push → github release
+    #   secret-scan → fork-parity → consistency → bump → badge → changelog →
+    #   commit → push → github release → (post-release) verify-ci, install-smoke
     # Lint runs before tests (cheap fails first). Tests run before validate
     # so behavioral regressions fail the test suite before the structural
     # validator inspects the manifest.
     #
-    # EVERY check above runs BEFORE stage_bump. That ordering is the whole point
-    # of stage_ci_preflight: a CI-parity defect aborts the publish with the tree
-    # untouched, instead of being discovered on GitHub after the tag was pushed
-    # and the release was cut.
+    # EVERY check through stage_gh_release runs BEFORE or AT the release; the
+    # pre-bump block (everything before stage_bump) aborts with the tree
+    # untouched, so a parity or security defect can never strand a half-pushed
+    # tag. The two post-release reporters never abort by default — the release
+    # is already public when they run, so their job is the loud report.
     stage_bypass_guard()
     stage_check_clean(root)
     stage_lint(root)
@@ -2159,12 +3082,23 @@ def main() -> int:
     stage_validate(root)
     stage_ci_preflight(root)  # MANDATORY — the gates validate_plugin omits
     stage_marketplace_registration(root)  # Gate 6 parity with CPV's own publish.py
+    stage_secret_scan(root)  # MANDATORY — a committed credential blocks (CPV#217)
+    stage_fork_parity(root)  # MANDATORY — run the suite as Linux would
     stage_consistency(root)
     stage_bump(root, new_ver, args.dry_run)
     stage_update_badges(root, current, new_ver, args.dry_run)
     stage_changelog(root, new_ver, args.dry_run)
     stage_commit_and_push(root, new_ver, args.dry_run)
     stage_gh_release(root, new_ver, args.dry_run)
+
+    # Post-release reporters: the release is already public, so these never
+    # abort the run by default — they surface what the ruleset bypass let
+    # through (a red CI) and prove the artifact actually installs. Skipped on
+    # a dry-run: no release exists yet, so both would report against the WRONG
+    # commit/version and read as a defect rather than a preview.
+    if not args.dry_run:
+        stage_verify_ci_green(root)
+        stage_install_smoke(root, new_ver)
 
     cprint(f"\n{GREEN}{BOLD}Published {new_ver} successfully!{NC}")
     return 0
