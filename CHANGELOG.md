@@ -4,11 +4,38 @@ _Released by the ASSISTANT role-plugin (via the shared owner gh auth)._
 
 All notable changes to this project will be documented in this file.
 
+## [0.6.0] — 2026-09-29
+
+### Bug Fixes
+
+- Precision repairs from adversarial review round 2 (TRDD-QU8CIEB2) (0ae0660)
+
+### Documentation
+
+- Record why this plugin is absent from PREDEFINED_ROLE_PLUGIN_NAMES (TRDD-8GZ3TZD0) (e4041a6)
+- Add TRDD-QU8CIEB2 - maintenance pass 0.5.2 (CC 2.1.284 alignment, issues, 3-pillars) (8d6bf23)
+- Record advisor verdict + adversarial review findings on TRDD-QU8CIEB2 (3ac961a)
+- Mirror the 2.1.271 queued-delivery sharpening in README (TRDD-QU8CIEB2) (c80a672)
+- Governance sync findings on TRDD-QU8CIEB2 (spec 2.6.1, R42.9, R39.2 published-fact) (4db8a7c)
+
+### Features
+
+- Align persona to Claude Code 2.1.284 (TRDD-QU8CIEB2) (1a0f8bb)
+- Fold canon CPV 5.21.1 pipeline hardening (TRDD-QU8CIEB2) (c68eebc)
+
+### Memory
+
+- Widen recall surface of cpv-release-gate-blocks-on-demoted-nit (T-VOUGSM61) (e992086)
+- Split oversized atom ATOM-PA08-TP4R (1676>1500 chars) (26d69b6)
 ## [0.5.1] — 2026-08-29
 
 ### Documentation
 
 - Persona alignment with Claude Code 2.1.241-2.1.248 (TRDD-8GZ3TZD0) (8c23117)
+
+### Miscellaneous Tasks
+
+- Bump version to 0.5.1 (8d1afe0)
 ## [0.5.0] — 2026-08-25
 
 ### Documentation
