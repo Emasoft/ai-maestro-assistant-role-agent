@@ -106,7 +106,10 @@ the comm-graph is unenforced — the limit is the persona's alone to hold. That
 channel does surface failures now (a refused inbound, a dropped or oversized
 message, a roster too long to read fully), but every one is a *delivery* verdict,
 never a comm-graph one: neither the absence nor the presence of an error says
-anything about permission. And contact there is not only sending —
+anything about permission. Nor does a clean send: since Claude Code 2.1.271 a
+successful send may report the delivery as QUEUED behind the receiving session's
+pending approvals — delivered, never read, never agreed. And contact there is not
+only sending —
 `notify_when_idle` subscribes to another session's idle signal with no message at
 all, which the persona forbids as observation rather than excusing as a non-send.
 The roster cuts both ways too: seeing a session there is no licence to contact
