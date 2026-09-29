@@ -13,7 +13,7 @@ publish-globally: false
 # cpv-release-gate-blocks-on-demoted-nit
 
 
-^ATOM-PA08-TP4R [desc: "A demoted NIT still exits 4 and blocks the canonical release gate; consent the reviewed false positive, never edit the rule text", keywords: demoted_NIT_blocks_release validator_exit_4_with_zero_critical A2A_AGENT_IMPERSONATION_on_a_rule_table_row cpv-audit-consent.json canonical_rule_text_trips_the_impersonation_detector release_gate_fails_at_CRITICAL=0, type: project, ocd: 2026-08-16, lmd: 2026-08-16]
+^ATOM-PA08-TP4R [desc: "A demoted NIT still exits 4 and blocks the canonical release gate; consent the reviewed false positive, never edit the rule text", keywords: demoted_NIT_blocks_release validator_exit_4_with_zero_critical A2A_AGENT_IMPERSONATION_on_a_rule_table_row cpv-audit-consent.json canonical_rule_text_trips_the_impersonation_detector release_gate_fails_at_CRITICAL=0, type: project, ocd: 2026-08-16, lmd: 2026-09-29]
 
 CPV's canonical release gate fails on ANY validator exit 1-4, so a single DEMOTED NIT blocks a
 tree at `CRITICAL=0 MAJOR=0 MINOR=0`. This repo hits it because the vendored canonical R22 rule
@@ -33,6 +33,9 @@ stays visible as `(demoted, consented)`. It is informed review, not suppression 
 ALREADY-DEMOTED finding is consentable, the "prose IS the attack" family (prompt-inject, exfil,
 secrets, decode-threats) can never be consented, and the sha256 is over the full line re-read
 from disk, so any edit to that line invalidates the consent and the finding blocks again.
+
+
+^ATOM-F17L-9T8U [desc: "The two pin/line gotchas of the R22 consent workflow: bump every CPV version pin site together and verify which rule row the detector actually flags before trusting the card", keywords: pinned_CPV_version_not_issue_closed_state CI_disagrees_with_local_audit_gate bump_every_pin_site_together publish.py_version_pin ci.yml_release.yml_pins stale_version_pin_v3.1.0 verify_which_line_is_flagged R22.2_vs_R22.4_detector_row closed_issue_does_not_mean_feature_available consent_registry_unknown_to_old_pin, type: project, ocd: 2026-09-29, lmd: 2026-09-29]
 
 Two things that cost time and are easy to get wrong:
 - The pinned CPV version is what matters, not the issue's CLOSED state. #201 was closed while
