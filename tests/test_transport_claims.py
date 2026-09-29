@@ -203,6 +203,21 @@ _CURRENT_REACH = {
     "the self-name in the roster (2.1.239: ListAgents reports the caller's own addressable name)": (
         re.compile(r"names YOU", re.IGNORECASE)
     ),
+    # 2.1.271 sharpened what a SUCCESSFUL send means: the result may report the
+    # delivery as QUEUED behind the receiving session's pending approvals. The
+    # persona already separated delivery failures from comm-graph permission;
+    # the queue notice closes the other half — a clean send is not a read, and
+    # certainly not an agreement. The persona must say so on the success path.
+    "the queued-delivery notice (2.1.271: a successful send may report QUEUED, so success is not read)": (
+        re.compile(r"only\s+delivers.{0,120}never read", re.IGNORECASE | re.DOTALL)
+    ),
+    # 2.1.284 made auto mode the DEFAULT permission mode on interactive
+    # sessions when no mode is configured (every plan and provider). The
+    # persona's auto-mode sentence was mode-conditional; it now carries the
+    # default-mode context, and the suite pins that the default claim survived.
+    "the default permission mode (2.1.284: sessions start in auto mode when none is configured)": (
+        re.compile(r"auto mode[^.]{0,60}default permission", re.IGNORECASE | re.DOTALL)
+    ),
 }
 
 

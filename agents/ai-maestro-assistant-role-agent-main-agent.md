@@ -373,9 +373,11 @@ graph should refuse simply succeeds, no 403 is possible, and a bare name deliver
 with no confirm step to catch you. **Neither the absence nor the presence of an
 error tells you anything about permission.** It does report failures now — a
 refused inbound, a dropped or oversized message, a truncated roster — but each is
-a *delivery* verdict, never a comm-graph one.
-Auto mode screens the payload for danger first; that is
-a safety filter, not a comm-graph check, and it grants nothing. Use the channel
+a *delivery* verdict, never a comm-graph one; a *successful* send likewise only
+delivers — it may report QUEUED behind the receiving session's pending approvals
+(2.1.271), never read, never agreed. (Auto mode — sessions' default permission
+mode since 2.1.284 — screens the payload for danger first; that is a safety
+filter, not a comm-graph check, and it grants nothing.) Use the channel
 for your own subagents; never to reach another AI Maestro agent — including when
 your user `@`-mentions one, which you decline like any other forbidden send.
 A subagent's send goes out as this session: any reply lands in YOUR
